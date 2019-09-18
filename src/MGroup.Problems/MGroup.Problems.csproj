@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MGroup.Analyzers" Version="1.0.84" />
+    <PackageReference Include="MGroup.LinearAlgebra" Version="1.0.88" />
+    <PackageReference Include="MGroup.MSolve.Discretization" Version="1.0.89" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
+</Project>
