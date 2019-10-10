@@ -1,7 +1,7 @@
 ![alt text](http://mgroup.ntua.gr/wp-content/uploads/2018/05/MGroup52.png "MGroup")
 # MSolve.Constitutive
 
-Msolve library that includes standard material models (phenomenological laws) as well as implementations of 
+MSolve library that includes standard material models (phenomenological laws) as well as implementations of 
 multiscale homogenization schemes for the modeling of microscopically heterogeneous materials.
 
 ## Features
