@@ -28,7 +28,7 @@ The material library implemented in msolve consits of the following material law
 4. thermal problems
 
 #### Model General properties
-Classes of the Msolve Constitutive porject are also used to assign general model properites:
+Classes of the Msolve Constitutive project are also used to assign general model properites:
 1. for dynamic analysis
 2. steady state thermal problems
 
