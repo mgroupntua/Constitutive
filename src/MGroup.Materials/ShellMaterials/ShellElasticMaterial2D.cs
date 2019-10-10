@@ -5,7 +5,7 @@ using MGroup.Materials.Interfaces;
 
 namespace MGroup.Materials.ShellMaterials
 {
-    public class ShellElasticMaterial2D : IShellMaterial
+	public class ShellElasticMaterial2D : IShellMaterial
 	{
 		public double[] NormalVectorV3 { get; set; }
 		public double[] TangentVectorV1 { get; set; }
@@ -52,7 +52,7 @@ namespace MGroup.Materials.ShellMaterials
 			auxMatrix1[0, 1] = surfaceBasisVector1.DotProduct(surfaceBasisVector2);
 			auxMatrix1[1, 0] = surfaceBasisVector2.DotProduct(surfaceBasisVector1);
 			auxMatrix1[1, 1] = surfaceBasisVector2.DotProduct(surfaceBasisVector2);
-            (Matrix inverse, double det) = auxMatrix1.InvertAndDeterminant();
+			(Matrix inverse, double det) = auxMatrix1.InvertAndDeterminant();
 			
 			var constitutiveMatrix = Matrix.CreateFromArray(new double[3, 3]
 			{
