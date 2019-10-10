@@ -8,7 +8,10 @@
     <PackageReference Include="MGroup.Analyzers" Version="1.0.115" />
     <PackageReference Include="MGroup.FEM" Version="1.0.116" />
     <PackageReference Include="MGroup.MSolve.Logging" Version="1.0.114" />
-    <PackageReference Include="MGroup.Problems" Version="1.0.95" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MGroup.Problems\MGroup.Problems.csproj" />
   </ItemGroup>
 
 </Project>

@@ -2,10 +2,10 @@
 
 namespace MGroup.Materials.Interfaces
 {
-    public interface IContinuumMaterial2D : IFiniteElementMaterial
-    {
-        double[] Stresses { get; }
-        IMatrixView ConstitutiveMatrix { get; }
-        void UpdateMaterial(double[] strains);
-    }
+	public interface IContinuumMaterial2D : IFiniteElementMaterial
+	{
+		double[] Stresses { get; }
+		IMatrixView ConstitutiveMatrix { get; }
+		void UpdateMaterial(double[] strains);
+	}
 }

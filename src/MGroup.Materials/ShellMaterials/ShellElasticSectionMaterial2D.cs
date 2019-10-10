@@ -5,7 +5,7 @@ using MGroup.Materials.Interfaces;
 
 namespace MGroup.Materials.ShellMaterials
 {
-    public class ShellElasticSectionMaterial2D : IShellSectionMaterial
+	public class ShellElasticSectionMaterial2D : IShellSectionMaterial
 	{
 		object ICloneable.Clone()
 		{
@@ -70,14 +70,14 @@ namespace MGroup.Materials.ShellMaterials
 		{
 			BendingConstitutiveMatrix = CalculateConstitutiveMatrix(vector1, vector2);
 			BendingConstitutiveMatrix.Scale(YoungModulus * Math.Pow(Thickness, 3) /
-			                                12 / (1 - Math.Pow(PoissonRatio, 2)));
+											12 / (1 - Math.Pow(PoissonRatio, 2)));
 		}
 
 		private void CalculateMembraneConstitutiveMatrix(double[] vector1, double[] vector2, double thickness)
 		{
 			MembraneConstitutiveMatrix= CalculateConstitutiveMatrix(vector1,vector2);
 			MembraneConstitutiveMatrix.Scale(YoungModulus * Thickness /
-			                                 (1 - Math.Pow(PoissonRatio, 2)));
+											 (1 - Math.Pow(PoissonRatio, 2)));
 		}
 
 		private Matrix CalculateConstitutiveMatrix(double[] surfaceBasisVector1, double[] surfaceBasisVector2)
@@ -87,7 +87,7 @@ namespace MGroup.Materials.ShellMaterials
 			auxMatrix1[0, 1] = surfaceBasisVector1.DotProduct(surfaceBasisVector2);
 			auxMatrix1[1, 0] = surfaceBasisVector2.DotProduct(surfaceBasisVector1);
 			auxMatrix1[1, 1] = surfaceBasisVector2.DotProduct(surfaceBasisVector2);
-            (Matrix inverse, double det) = auxMatrix1.InvertAndDeterminant();
+			(Matrix inverse, double det) = auxMatrix1.InvertAndDeterminant();
 
 			var constitutiveMatrix = Matrix.CreateFromArray(new double[3, 3]
 			{

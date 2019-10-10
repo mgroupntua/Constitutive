@@ -2,8 +2,8 @@
 
 namespace MGroup.Materials.Interfaces
 {
-    public interface IFiberFiniteElementMaterial : IFiniteElementMaterial
-    {
-        IList<IFiberMaterial> FiberMaterials { get; }
-    }
+	public interface IFiberFiniteElementMaterial : IFiniteElementMaterial
+	{
+		IList<IFiberMaterial> FiberMaterials { get; }
+	}
 }

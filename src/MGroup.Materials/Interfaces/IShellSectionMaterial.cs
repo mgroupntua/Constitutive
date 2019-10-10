@@ -2,7 +2,7 @@
 
 namespace MGroup.Materials.Interfaces
 {
-    public interface IShellSectionMaterial:IFiniteElementMaterial
+	public interface IShellSectionMaterial:IFiniteElementMaterial
 	{
 		new IShellSectionMaterial Clone();
 		double[] MembraneForces { get; }
