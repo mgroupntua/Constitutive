@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.Materials.Interfaces;
 
 namespace MGroup.Materials.ShellMaterials
 {
 	/// <summary>
-	/// Isotropic.
+	/// An elastic isotropic material to be used in shell finite element formulations that take into account the
+	/// Reissner Mindlin hypothesis
 	/// Authors Gerasimos-Serafeim 
 	/// </summary>
 	public class ShellElasticMaterial3D : IShellMaterial 

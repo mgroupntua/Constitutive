@@ -1,4 +1,4 @@
-﻿//------------------------------------------------------------------------
+//------------------------------------------------------------------------
 // Code ported from:
 // Johan Clausen
 // Esbjerg Department of Engineering
@@ -15,6 +15,9 @@ using MGroup.Materials.Interfaces;
 //TODO: Use the Matrix and Vector operations instead of implementing them again for double[,] and double[] here
 namespace MGroup.Materials
 {
+	/// <summary>
+	/// It is an implementation of the Mohr Coulomb Material model for 3D finite elements.
+	/// </summary>
 	public class MohrCoulombMaterial : IIsotropicContinuumMaterial3D
 	{
 		private const double PoissonRatioForIncompressibleSolid = 0.5;
@@ -28,6 +31,14 @@ namespace MGroup.Materials
 		private double[] stressesNew = new double[6];
 		private readonly double youngModulus, shearModulus, poissonRatio, cohesion, friction, dilation;
 
+		/// <summary>
+		/// Creates an object of Mohr Coulomb Material class.
+		/// </summary>
+		/// <param name="youngModulus">young's Modulus value</param>
+		/// <param name="poissonRatio">poisson's Ratio value</param>
+		/// <param name="cohesion">cohesion coefficient value</param>
+		/// <param name="friction">friction coefficient value</param>
+		/// <param name="dilation">dilation coefficient value.</param>
 		public MohrCoulombMaterial(double youngModulus, double poissonRatio, double cohesion, double friction, double dilation)
 		{
 			this.youngModulus = youngModulus;
@@ -49,16 +60,30 @@ namespace MGroup.Materials
 
 		}
 
+		/// <summary>
+		/// Clears stresses - Currently not a valid operation.
+		/// </summary>
 		public double[] Stresses => stressesNew;
 
+		/// <summary>
+		/// Returns the constitutive matrix of the material for the current strain state
+		/// </summary>
 		public IMatrixView ConstitutiveMatrix => Matrix.CreateFromArray(constitutiveMatrix); //TODO: this copies stuff and is not efficient.
 
+		/// <summary>
+		/// Updates the material state for a given new strain point.
+		/// </summary>
+		/// <param name="Delta">The given strain point.</param>
 		public void UpdateMaterial(double[] strainsIncrement)
 		{
 			this.incrementalStrains.CopyFrom(strainsIncrement);
 			this.CalculateNextStressStrainPoint();
 		}
 
+		/// <summary>
+		/// Clears the saved stress strain point connected to the last converged analysis step.
+		/// Currently not a valid operation.
+		/// </summary>
 		public void ClearState()
 		{
 			constitutiveMatrix = new double[6, 6];
@@ -71,22 +96,39 @@ namespace MGroup.Materials
 			DlinElas(youngModulus, poissonRatio, 6, constitutiveMatrix, Dinv);
 		}
 
+		/// <summary>
+		/// Saves the current stress strain state of the material (after convergence of the iterative solution process
+		/// for a given loading step).
+		/// </summary>
 		public void SaveState()
 		{
 			Array.Copy(this.constitutiveMatrixNew, this.constitutiveMatrix, 6 * 6);
 			Array.Copy(this.stressesNew, this.stresses, 6);
 		}
 
+		/// <summary>
+		/// Clears stresses.
+		/// </summary>
 		public void ClearStresses()
 		{
 			Array.Clear(this.stresses, 0, 6);
 			Array.Clear(this.stressesNew, 0, 6);
 		}
 
+		/// <summary>
+		/// Returns the ID of the material class indicating a specific material law implementation.
+		/// </summary>
 		public int ID => 998;
 
+		/// <summary>
+		/// Resets the boolean that indicates if the constitutive matrix of the material has changed for the current iteratively update 
+		/// of the deformation state.
+		/// </summary>
 		public bool Modified => modified;
 
+		/// <summary>
+		/// Returns the ID of the material class indicating a specific material law implementation.
+		/// </summary>
 		public void ResetModified() => modified = false;
 
 		public double YoungModulus
@@ -101,11 +143,18 @@ namespace MGroup.Materials
 			set { throw new InvalidOperationException(); }
 		}
 
+		/// <summary>
+		/// Returns coordinates. Currently not a valid operation.
+		/// </summary>
 		public double[] Coordinates { get; set; }
 		public double Cohesion { get { return cohesion; } }
 		public double Friction { get { return friction; } }
 		public double Dilation { get { return dilation; } }
 
+		/// <summary>
+		/// Creates a clone of material object with the same parameters.
+		/// </summary>
+		/// <returns>The created material clone</returns>
 		public object Clone()
 		{
 			var constitutiveMatrixCopy = new double[6, 6];

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.LinearAlgebra.Vectors;
 using MGroup.Materials.Interfaces;
@@ -28,8 +28,17 @@ namespace MGroup.Materials
 		private double[,] ConstitutiveMatrix3D;
 		private double[,] ConstitutiveMatrix3Dprevious;
 		private double[] stress3D;
-		
 
+		/// <summary>
+		/// Creates and object of the BondSlipCohMat material class.
+		/// </summary>
+		/// <param name="k_elastic">Elastic stifness in the shear direction.</param>
+		/// <param name="k_elastic2">Tangent stifness after yielding in the shear direction.</param>
+		/// <param name="k_elastic_normal">Elastic stifness in the normal direction.</param>
+		/// <param name="t_max">Tield traction.</param>
+		/// <param name="s_0">Initila traction state values.</param>
+		/// <param name="a_0">Intial hardening parameter values.</param>
+		/// <param name="tol">Tolerance for the ued iterative procedure followed for the calculation of the next traction slip point.</param>
 		public BondSlipCohMat(double k_elastic, double k_elastic2,double k_elastic_normal, double t_max, double[] s_0, double[] a_0, double tol)
 		{
 			this.k_elastic = k_elastic;
@@ -42,6 +51,17 @@ namespace MGroup.Materials
 			this.InitializeMatrices();
 		}
 
+		/// <summary>
+		/// /// Creates and object of the BondSlipCohMat material class.
+		/// </summary>
+		/// <param name="T_o_1">Yield traction in the shear direction.</param>
+		/// <param name="D_o_1">Yield slip in the shear direction.</param>
+		/// <param name="k_elastic2_ratio">Percentage of the ratio: Elastic stifness in the shear direction/Tangent stifness after yielding in the shear direction.</param>
+		/// <param name="T_o_3">Ttraction of a characteristic traction slip point in the normal direction.</param>
+		/// <param name="D_o_3">Slip of a characteristic traction slip point in the normal direction.</param>
+		/// <param name="s_0">Initila traction state values.</param>
+		/// <param name="a_0">Intial hardening parameter values.</param>
+		/// <param name="tol">Tolerance for the ued iterative procedure followed for the calculation of the next traction slip point.</param>
 		public BondSlipCohMat(double T_o_1, double D_o_1, double k_elastic2_ratio,double T_o_3, double D_o_3, double[] s_0, double[] a_0, double tol)
 		{
 			this.k_elastic = T_o_1/D_o_1;
@@ -54,11 +74,19 @@ namespace MGroup.Materials
 			this.InitializeMatrices();
 		}
 
+		/// <summary>
+		/// Creates a clone of material object with the same parameters.
+		/// </summary>
+		/// <returns>The created material clone</returns>
 		ICohesiveZoneMaterial3D ICohesiveZoneMaterial3D.Clone()
 		{
 			return this.Clone();
 		}
 
+		/// <summary>
+		/// Creates a clone of material object with the same parameters.
+		/// </summary>
+		/// <returns>The created material clone</returns>
 		public BondSlipCohMat Clone()
 		{
 			return new BondSlipCohMat(k_elastic, k_elastic2, k_elastic_normal, t_max, s_0, a_0, tol);            
@@ -85,6 +113,10 @@ namespace MGroup.Materials
 			alpha = new double[2] { a_0[0], a_0[1] };
 		}
 
+		/// <summary>
+		/// Updates the material state for a given new strain point.
+		/// </summary>
+		/// <param name="Delta">The given strain point.</param>
 		public void UpdateMaterial(double[] epsilon)
 		{
 			// 
@@ -243,11 +275,17 @@ namespace MGroup.Materials
 			return false;
 		}
 
+		/// <summary>
+		/// Returns the tractions of this material for the current strain state.
+		/// </summary>
 		public double[] Tractions // opws xrhsimopoeitai sto mohrcoulomb kai hexa8
 		{
 			get { return stress3D; }
 		}
 
+		/// <summary>
+		/// Returns the constitutive matrix of the material for the current strain state
+		/// </summary>
 		public IMatrixView ConstitutiveMatrix
 		{
 			get
@@ -257,6 +295,10 @@ namespace MGroup.Materials
 			}
 		}
 
+		/// <summary>
+		/// Saves the current stress strain state of the material (after convergence of the iterative solution process
+		/// for a given loading step).
+		/// </summary>
 		public void SaveState()
 		{
 			a_0 = new double[2] { alpha[0], alpha[1] };
@@ -264,21 +306,36 @@ namespace MGroup.Materials
 			eLastConverged = new double[2] { eCurrentUpdate[0], eCurrentUpdate[1] };
 		}
 
+		/// <summary>
+		/// Returns a boolean indicating if the constitutive matrix of the material has changed for the current iteratively update 
+		/// of the deformation state.
+		/// </summary>
 		public bool Modified
 		{
 			get { return modified; }
 		}
 
+		/// <summary>
+		/// Resets the boolean that indicates if the constitutive matrix of the material has changed for the current iteratively update 
+		/// of the deformation state.
+		/// </summary>
 		public void ResetModified()
 		{
 			modified = false;
 		}
 
+		/// <summary>
+		/// Returns the ID of the material class indicating a specific material law implementation.
+		/// </summary>
 		public int ID
 		{
 			get { return 1000; }
 		}
 
+		/// <summary>
+		/// Clears the saved stress strain point connected to the last converged analysis step.
+		/// Currently not a valid operation.
+		/// </summary>
 		public void ClearState() // pithanws TODO 
 		{
 			//ean thelei to D_tan ths arxikhs katastashs tha epistrepsoume const me De
@@ -286,6 +343,10 @@ namespace MGroup.Materials
 			//opws
 			// sthn epanalhptikh diadikasia (opws px provider.Reset pou sumvainei se polles epanalipseis?)
 		}
+
+		/// <summary>
+		/// Clears tractions - not a valid operation.
+		/// </summary>
 		public void ClearTractions()
 		{
 
@@ -306,6 +367,10 @@ namespace MGroup.Materials
 		}
 
 		private double[] coordinates;
+
+		/// <summary>
+		/// Returns coordinates. Currently not a valid operation.
+		/// </summary>
 		public double[] Coordinates
 		{
 

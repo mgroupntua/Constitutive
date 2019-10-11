@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.LinearAlgebra.Vectors;
 using MGroup.Materials.Interfaces;
@@ -47,17 +47,27 @@ namespace MGroup.Materials
 		}
 
 		#region IFiniteElementMaterial Members
-
+		/// <summary>
+		/// Returns the ID of the material class indicating a specific material law implementation.
+		/// </summary>
 		public int ID
 		{
 			get { return 1; }
 		}
 
+		/// <summary>
+		/// Returns a boolean indicating if the constitutive matrix of the material has changed for the current iteratively update 
+		/// of the deformation state.
+		/// </summary>
 		public bool Modified
 		{
 			get { return false; }
 		}
 
+		/// <summary>
+		/// Resets the boolean that indicates if the constitutive matrix of the material has changed for the current iteratively update 
+		/// of the deformation state.
+		/// </summary>
 		public void ResetModified()
 		{
 		}
@@ -65,9 +75,14 @@ namespace MGroup.Materials
 		#endregion
 
 		#region IFiniteElementMaterial3D Members
-
+		/// <summary>
+		/// Returns the stresses of this material for the current strain state.
+		/// </summary>
 		public double[] Stresses { get { return (stresses); } }
-		
+
+		/// <summary>
+		/// Returns the constitutive matrix of the material for the current strain state
+		/// </summary>
 		public IMatrixView ConstitutiveMatrix
 		{
 			get
@@ -77,6 +92,10 @@ namespace MGroup.Materials
 			}
 		}
 
+		/// <summary>
+		/// Updates the material state for a given new strain point.
+		/// </summary>
+		/// <param name="Delta">The given strain point.</param>
 		public void UpdateMaterial(double[] DefGradVec )
 		{
 			//throw new NotImplementedException();
@@ -125,16 +144,27 @@ namespace MGroup.Materials
 			constitutiveMatrix = GetConstitutiveMatrix();
 		}
 
+		/// <summary>
+		/// Clears the saved stress strain point connected to the last converged analysis step.
+		/// Currently not a valid operation.
+		/// </summary>
 		public void ClearState()
 		{
 			//throw new NotImplementedException();
 		}
 
+		/// <summary>
+		/// Saves the current stress strain state of the material (after convergence of the iterative solution process
+		/// for a given loading step).
+		/// </summary>
 		public void SaveState()
 		{
 			//throw new NotImplementedException();
 		}
 
+		/// <summary>
+		/// Clears stresses - Currently not a valid operation.
+		/// </summary>
 		public void ClearStresses()
 		{
 			//throw new NotImplementedException();
@@ -143,12 +173,19 @@ namespace MGroup.Materials
 		#endregion
 
 		#region ICloneable Members
-
+		/// <summary>
+		/// Creates a clone of material object with the same parameters.
+		/// </summary>
+		/// <returns>The created material clone</returns>
 		public object Clone()
 		{
 			return new ElasticMaterial3DDefGrad() { YoungModulus = this.YoungModulus, PoissonRatio = this.PoissonRatio };
 		}
 
+		/// <summary>
+		/// Creates a clone of material object with the same parameters.
+		/// </summary>
+		/// <returns>The created material clone</returns>
 		object ICloneable.Clone()
 		{
 			return Clone();

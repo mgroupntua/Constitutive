@@ -1,5 +1,8 @@
-﻿namespace MGroup.Materials.Interfaces
+namespace MGroup.Materials.Interfaces
 {
+	/// <summary>
+	/// Interface for materials laws implementations to be used in beam sections analysis 
+	/// </summary>
 	public interface IFiberMaterial : IFiniteElementMaterial
 	{
 		double Stress { get; }

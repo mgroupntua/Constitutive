@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace MGroup.Materials.VonMisesStress
 {
@@ -12,13 +12,22 @@ namespace MGroup.Materials.VonMisesStress
 	{
 		private readonly double E;
 		private readonly double v;
-
+		/// <summary>
+		/// Sets the Young's modulus and the Poisson's ratio to be used
+		/// </summary>
+		/// <param name="material"> the elastic isotropic material to set the parameters from.</param>
 		public ElasticPlaneStrainVonMises(ElasticMaterial2D material)
 		{
 			this.E = material.YoungModulus;
 			this.v = material.PoissonRatio;
 		}
 
+		/// <summary>
+		/// Calculates the equivalent von Mises stress for plain strain conditions and given strain and stress tensor.
+		/// </summary>
+		/// <param name="strainTensor2D"> A 2D strain tensor.</param>
+		/// <param name="cauchyStressTensor2D"> A 2D cauchy stress tensor. </param>
+		/// <returns></returns>
 		public double Calculate(double[] strainTensor2D, double[] cauchyStressTensor2D)
 		{
 			double e11 = strainTensor2D[0];

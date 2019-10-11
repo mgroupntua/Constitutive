@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.Materials.Interfaces;
 
@@ -23,11 +23,19 @@ namespace MGroup.Materials
 		private double tol;
 		private double d_prev_step;
 
+		/// <summary>
+		/// Creates a clone of material object with the same parameters.
+		/// </summary>
+		/// <returns>The created material clone</returns>
 		ICohesiveZoneMaterial3D ICohesiveZoneMaterial3D.Clone()
 		{
 			return this.Clone(); 
 		}
 
+		/// <summary>
+		/// Creates a clone of material object with the same parameters.
+		/// </summary>
+		/// <returns>The created material clone</returns>
 		public BenzeggaghKenaneCohesiveMaterial Clone()
 		{
 			return new BenzeggaghKenaneCohesiveMaterial()
@@ -73,6 +81,10 @@ namespace MGroup.Materials
 			tol = Math.Pow(10, -19);
 		}
 
+		/// <summary>
+		/// Updates the material state for a given new strain point.
+		/// </summary>
+		/// <param name="Delta">The given strain point.</param>
 		public void UpdateMaterial(double[] Delta)
 		{
 			if (matrices_not_initialized)
@@ -198,11 +210,17 @@ namespace MGroup.Materials
 			return false;
 		}
 
+		/// <summary>
+		/// Returns the tractions of this material for the current strain state.
+		/// </summary>
 		public double[] Tractions 
 		{
 			get { return T_int; }
 		}
 
+		/// <summary>
+		/// Returns the constitutive matrix of the material for the current strain state
+		/// </summary>
 		public IMatrixView ConstitutiveMatrix
 		{
 			get
@@ -212,26 +230,45 @@ namespace MGroup.Materials
 			}
 		}
 
+		/// <summary>
+		/// Saves the current stress strain state of the material (after convergence of the iterative solution process
+		/// for a given loading step).
+		/// </summary>
 		public void SaveState()
 		{
 			d_prev_step = d;
 		}
 
+		/// <summary>
+		/// Returns a boolean indicating if the constitutive matrix of the material has changed for the current iteratively update 
+		/// of the deformation state.
+		/// </summary>
 		public bool Modified
 		{
 			get { return modified; }
 		}
 
+		/// <summary>
+		/// Resets the boolean that indicates if the constitutive matrix of the material has changed for the current iteratively update 
+		/// of the deformation state.
+		/// </summary>
 		public void ResetModified()
 		{
 			modified = false;
 		}
 
+		/// <summary>
+		/// Returns the ID of the material class indicating a specific material law implementation.
+		/// </summary>
 		public int ID
 		{
 			get { return 999; }
 		}
 
+		/// <summary>
+		/// Clears the saved stress strain point connected to the last converged analysis step.
+		/// Currently not a valid operation.
+		/// </summary>
 		public void ClearState() 
 		{
 			// possibly TODO 
@@ -240,27 +277,34 @@ namespace MGroup.Materials
 			//but don't use it as elastic in other cases
 			// maybe in iterative procedure (example provider.Reset ?)
 		}
+
+		/// <summary>
+		/// Clears tractions - not a valid operation.
+		/// </summary>
 		public void ClearTractions()
 		{
-			
+			throw new InvalidOperationException();
 		}
 
 		private double youngModulus = 1;
 		public double YoungModulus
 		{
-			get { return youngModulus; }
+			get { throw new InvalidOperationException(); } //return youngModulus; }
 			set { throw new InvalidOperationException(); }
 		}
 
 		private double poissonRatio = 1;
 		public double PoissonRatio
 		{
-			get { return poissonRatio; }
+			get { throw new InvalidOperationException(); } //return poissonRatio; }
 			set { throw new InvalidOperationException(); }
 		}
 
 		private double [] coordinates ;
-
+		
+		/// <summary>
+		/// Returns coordinates. Currently not a valid operation.
+		/// </summary>
 		public double [] Coordinates
 		{
 

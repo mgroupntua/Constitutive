@@ -1,7 +1,14 @@
-﻿namespace MGroup.Materials
+namespace MGroup.Materials
 {
 	public class ThermalMaterial
 	{
+		/// <summary>
+		/// Constructs a new material for the purposes of heat transfer applications. 
+		/// This material is characterized by the following properties: specific heat, thermal conductivity and material density
+		/// </summary>
+		/// <param name="density">material density</param>
+		/// <param name="specialHeatCoeff">specific heat,</param>
+		/// <param name="thermalConductivity">thermal conductivity</param>
 		public ThermalMaterial(double density, double specialHeatCoeff, double thermalConductivity)
 		{
 			this.Density = density;

@@ -1,7 +1,10 @@
-﻿using MGroup.LinearAlgebra.Matrices;
+using MGroup.LinearAlgebra.Matrices;
 
 namespace MGroup.Materials.Interfaces
 {
+	/// <summary>
+	/// Interface for materials laws implementations to be used with shell finite elements
+	/// </summary>
 	public interface IShellMaterial : IFiniteElementMaterial
 	{
 		double[] Stresses { get; }
