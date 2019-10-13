@@ -1,10 +1,14 @@
-﻿using System;
+using System;
 using MGroup.LinearAlgebra;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.Materials.Interfaces;
 
 namespace MGroup.Materials.ShellMaterials
 {
+	/// <summary>
+	/// An elastic isotropic material to be used in shell finite element formulations that take into account the
+	/// Kirchhof Love hypothesis.
+	/// </summary>
 	public class ShellElasticSectionMaterial2D : IShellSectionMaterial
 	{
 		object ICloneable.Clone()

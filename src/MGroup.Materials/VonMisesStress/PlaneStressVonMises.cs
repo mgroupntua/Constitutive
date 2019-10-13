@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace MGroup.Materials.VonMisesStress
 {
@@ -9,6 +9,12 @@ namespace MGroup.Materials.VonMisesStress
 	/// </summary>
 	public class PlaneStressVonMises : IVonMisesStress2D
 	{
+		/// <summary>
+		/// Calculates the equivalent von Mises stress for plane stress conditions.
+		/// </summary>
+		/// <param name="strainTensor2D"> A 2D strain tensor.</param>
+		/// <param name="cauchyStressTensor2D"> A 2D cauchy stress tensor. </param>
+		/// <returns></returns>
 		public double Calculate(double[] strainTensor2D, double[] cauchyStressTensor2D)
 		{
 			double s11 = cauchyStressTensor2D[0];
