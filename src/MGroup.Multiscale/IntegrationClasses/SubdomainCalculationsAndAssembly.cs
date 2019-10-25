@@ -1,12 +1,12 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MGroup.FEM.Entities;
 using MGroup.FEM.Interfaces;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Discretization.FreedomDegrees;
 using MGroup.MSolve.Discretization.Interfaces;
 using MGroup.Multiscale.Interfaces;
-using MGroup.Solvers;
-using MGroup.Solvers.LinearSystems;
+using MGroup.MSolve.Solvers;
+using MGroup.MSolve.Solvers.LinearSystems;
 
 namespace MGroup.Multiscale.IntegrationClasses
 {

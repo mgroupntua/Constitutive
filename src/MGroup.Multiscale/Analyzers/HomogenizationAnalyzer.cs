@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MGroup.Analyzers.Interfaces;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Discretization.Interfaces;
-using MGroup.Solvers;
-using MGroup.Solvers.LinearSystems;
+using MGroup.MSolve.Solvers;
+using MGroup.MSolve.Solvers.LinearSystems;
 
 namespace MGroup.Multiscale.Analyzers
 {

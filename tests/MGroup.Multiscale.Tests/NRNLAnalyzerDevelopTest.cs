@@ -1,4 +1,4 @@
-﻿using MGroup.MSolve.Discretization;
+using MGroup.MSolve.Discretization;
 using System.Collections.Generic;
 using MGroup.Analyzers.NonLinear;
 using MGroup.FEM;
@@ -13,9 +13,9 @@ using MGroup.MSolve.Discretization.Interfaces;
 using MGroup.MSolve.Discretization.Providers;
 using MGroup.Multiscale.Analyzers;
 using MGroup.Problems;
-using MGroup.Solvers;
+using MGroup.MSolve.Solvers;
 using MGroup.Solvers.Direct;
-using MGroup.Solvers.LinearSystems;
+using MGroup.MSolve.Solvers.LinearSystems;
 using MGroup.Solvers.Ordering;
 using MGroup.Solvers.Ordering.Reordering;
 

@@ -2,9 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Product>MSolve</Product>
+    <Authors>George Stavroulakis, Gerasimos Sotiropoulos, Serafeim Bakalakos</Authors>
+    <Description>A series of material laws pertaining to the solution of computational mechanics problems</Description>
+    <PackageProjectUrl>http://mgroup.ntua.gr/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mgroupntua/MGroup.Constitutive</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MGroup.LinearAlgebra" Version="1.0.88" />
+    <PackageReference Include="MGroup.LinearAlgebra" Version="1.0.251" />
   </ItemGroup>
 </Project>

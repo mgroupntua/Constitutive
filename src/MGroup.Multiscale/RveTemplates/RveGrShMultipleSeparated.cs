@@ -91,7 +91,8 @@ namespace MGroup.Multiscale.RveTemplates
 			//domain separation ds1
 			int totalSubdomains = 8;
 			DdmCalculationsGeneral.BuildModelInterconnectionData(model);
-			var decomposer = new AutomaticDomainDecomposer2(model, totalSubdomains);
+			//var decomposer = new AutomaticDomainDecomposer2(model, totalSubdomains);
+			var decomposer = new AutomaticDomainDecomposer(model, totalSubdomains);
 			decomposer.UpdateModel();
 			var subdHexaIds = DdmCalculationsGeneral.DetermineHexaElementsSubdomainsFromModel(model);
 

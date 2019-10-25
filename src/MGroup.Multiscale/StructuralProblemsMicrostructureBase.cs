@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MGroup.Analyzers.NonLinear;
 using MGroup.FEM;
 using MGroup.FEM.Entities;
@@ -8,8 +8,8 @@ using MGroup.MSolve.Discretization.Interfaces;
 using MGroup.MSolve.Discretization.Providers;
 using MGroup.Multiscale.Analyzers;
 using MGroup.Problems;
-using MGroup.Solvers;
-using MGroup.Solvers.LinearSystems;
+using MGroup.MSolve.Solvers;
+using MGroup.MSolve.Solvers.LinearSystems;
 
 namespace MGroup.Multiscale
 {

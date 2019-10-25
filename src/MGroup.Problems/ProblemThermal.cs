@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using MGroup.Analyzers.Interfaces;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.Discretization.Interfaces;
 using MGroup.MSolve.Discretization.Providers;
-using MGroup.Solvers;
-using MGroup.Solvers.LinearSystems;
+using MGroup.MSolve.Solvers;
+using MGroup.MSolve.Solvers.LinearSystems;
 
 //TODO: Usually the LinearSystem is passed in, but for GetRHSFromHistoryLoad() it is stored as a field. Decide on one method.
 //TODO: I am not too fond of the provider storing global sized matrices.

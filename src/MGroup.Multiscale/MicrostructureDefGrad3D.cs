@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MGroup.Analyzers.NonLinear;
@@ -15,8 +15,8 @@ using MGroup.Multiscale.Interfaces;
 using MGroup.Multiscale.ScaleTransitions;
 using MGroup.Multiscale.SupportiveClasses;
 using MGroup.Problems;
-using MGroup.Solvers;
-using MGroup.Solvers.LinearSystems;
+using MGroup.MSolve.Solvers;
+using MGroup.MSolve.Solvers.LinearSystems;
 
 //using ISAAR.MSolve.PreProcessor.Interfaces;
 

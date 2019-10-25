@@ -2,12 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Product>MSolve</Product>
+    <Authors>Gerasimos Sotiropoulos, Serafeim Bakalakos, Dimitris Tsapetis</Authors>
+    <Description>Multiscale analysis for computational mechanics problems</Description>
+    <PackageProjectUrl>http://mgroup.ntua.gr/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mgroupntua/MGroup.Constitutive</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MGroup.Analyzers" Version="1.0.115" />
-    <PackageReference Include="MGroup.FEM" Version="1.0.116" />
-    <PackageReference Include="MGroup.MSolve.Logging" Version="1.0.114" />
+    <PackageReference Include="MGroup.Analyzers" Version="1.0.296" />
+    <PackageReference Include="MGroup.FEM" Version="1.0.238" />
+    <PackageReference Include="MGroup.MSolve.Logging" Version="1.0.294" />
   </ItemGroup>
 
   <ItemGroup>

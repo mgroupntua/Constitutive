@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using MGroup.Analyzers.Interfaces;
@@ -10,8 +10,8 @@ using MGroup.MSolve.Discretization.FreedomDegrees;
 using MGroup.MSolve.Discretization.Interfaces;
 using MGroup.MSolve.Logging;
 using MGroup.MSolve.Logging.Interfaces;
-using MGroup.Solvers;
-using MGroup.Solvers.LinearSystems;
+using MGroup.MSolve.Solvers;
+using MGroup.MSolve.Solvers.LinearSystems;
 
 namespace MGroup.Multiscale.Analyzers
 {
@@ -44,7 +44,7 @@ namespace MGroup.Multiscale.Analyzers
 		Dictionary<int, Dictionary<IDofType, double>> totalBoundaryDisplacements;
 		private readonly Dictionary<int, EquivalentContributionsAssebler> equivalentContributionsAssemblers;
 		private Vector globalRhs;
-		private readonly Dictionary<int, LinearAnalyzerLogFactory> logFactories = new Dictionary<int, LinearAnalyzerLogFactory>();
+		//private readonly Dictionary<int, LinearAnalyzerLogFactory> logFactories = new Dictionary<int, LinearAnalyzerLogFactory>();
 		private readonly Dictionary<int, IAnalyzerLog[]> logs = new Dictionary<int, IAnalyzerLog[]>();
 
 		public MicrostructureBvpNRNLAnalyzer(IModel model, ISolver solver, Dictionary<int, NonLinearSubdomainUpdaterWithInitialConditions> subdomainUpdaters,
@@ -93,7 +93,7 @@ namespace MGroup.Multiscale.Analyzers
 		private void InitializeLogs()
 		{
 			logs.Clear();
-			foreach (int id in logFactories.Keys) logs.Add(id, logFactories[id].CreateLogs());
+			//foreach (int id in logFactories.Keys) logs.Add(id, logFactories[id].CreateLogs());
 		}
 
 		//private void StoreLogResults(DateTime start, DateTime end)
@@ -103,7 +103,7 @@ namespace MGroup.Multiscale.Analyzers
 		//            l.StoreResults(start, end, linearSystems[id].Solution);
 		//}
 
-		public Dictionary<int, LinearAnalyzerLogFactory> LogFactories { get { return logFactories; } }
+		//public Dictionary<int, LinearAnalyzerLogFactory> LogFactories { get { return logFactories; } }
 
 		#region IAnalyzer Members
 
