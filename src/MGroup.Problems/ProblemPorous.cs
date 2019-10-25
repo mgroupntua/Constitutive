@@ -110,51 +110,49 @@ namespace MGroup.Problems
 			}
 		}
 
-		//GOATCOMMENT
 		//TODO: this should be done by an assembler class
 		//TODO: make sure this is called whenever the ordering changes
 		private CsrMatrix BuildQFromSubdomain(ISubdomain subdomain) 
 		{
-			//int numFreeDofs = subdomain.FreeDofOrdering.NumFreeDofs;
-			//var qSubdomain = DokRowMajor.CreateEmpty(numFreeDofs, numFreeDofs);
-			//DofTable allDofs = subdomain.FreeDofOrdering.FreeDofs;
-			//foreach (var element in subdomain.Elements)
-			//{
-			//	if (!(element.ElementType is IPorousFiniteElement)) continue;
+			int numFreeDofs = subdomain.FreeDofOrdering.NumFreeDofs;
+			var qSubdomain = DokRowMajor.CreateEmpty(numFreeDofs, numFreeDofs);
+			DofTable allDofs = subdomain.FreeDofOrdering.FreeDofs;
+			foreach (var element in subdomain.Elements)
+			{
+				if (!(element.ElementType is IPorousElement)) continue;
 
-			//	var e = (IPorousFiniteElement)element.ElementType;
-			//	IMatrix q = e.CouplingMatrix(element);
+				var e = (IPorousElement)element.ElementType;
+				IMatrix q = e.CouplingMatrix(element);
 
-			//	int iElementMatrixRow = 0;
-			//	for (int i = 0; i < element.ElementType.DofEnumerator.GetDofTypesForMatrixAssembly(element).Count; i++)
-			//	{
-			//		INode nodeRow = element.Nodes[i];
-			//		foreach (IDofType dofTypeRow in element.ElementType.DofEnumerator.GetDofTypesForMatrixAssembly(element)[i])
-			//		{
-			//			if (dofTypeRow != PorousMediaDof.Pressure) continue;
+				int iElementMatrixRow = 0;
+				for (int i = 0; i < element.ElementType.DofEnumerator.GetDofTypesForMatrixAssembly(element).Count; i++)
+				{
+					INode nodeRow = element.Nodes[i];
+					foreach (IDofType dofTypeRow in element.ElementType.DofEnumerator.GetDofTypesForMatrixAssembly(element)[i])
+					{
+						if (dofTypeRow != PorousMediaDof.Pressure) continue;
 
-			//			int dofRow = allDofs[nodeRow, dofTypeRow];
-			//			int iElementMatrixColumn = 0;
+						int dofRow = allDofs[nodeRow, dofTypeRow];
+						int iElementMatrixColumn = 0;
 
-			//			for (int j = 0; j < element.ElementType.DofEnumerator.GetDofTypesForMatrixAssembly(element).Count; j++)
-			//			{
-			//				INode nodeColumn = element.Nodes[j];
-			//				foreach (IDofType dofTypeColumn in element.ElementType.DofEnumerator.GetDofTypesForMatrixAssembly(element)[j])
-			//				{
-			//					if (dofTypeColumn == PorousMediaDof.Pressure) continue;
+						for (int j = 0; j < element.ElementType.DofEnumerator.GetDofTypesForMatrixAssembly(element).Count; j++)
+						{
+							INode nodeColumn = element.Nodes[j];
+							foreach (IDofType dofTypeColumn in element.ElementType.DofEnumerator.GetDofTypesForMatrixAssembly(element)[j])
+							{
+								if (dofTypeColumn == PorousMediaDof.Pressure) continue;
 
-			//					int dofColumn = allDofs[nodeColumn, dofTypeColumn];
-			//					qSubdomain.AddToEntry(dofColumn, dofRow, q[iElementMatrixRow, iElementMatrixColumn]);
-			//					iElementMatrixColumn++;
-			//				}
-			//			}
-			//			iElementMatrixRow++;
-			//		}
-			//	}
-			//}
+								int dofColumn = allDofs[nodeColumn, dofTypeColumn];
+								qSubdomain.AddToEntry(dofColumn, dofRow, q[iElementMatrixRow, iElementMatrixColumn]);
+								iElementMatrixColumn++;
+							}
+						}
+						iElementMatrixRow++;
+					}
+				}
+			}
 
-			//return qSubdomain.BuildCsrMatrix(true);
-			return null;
+			return qSubdomain.BuildCsrMatrix(true);
 		}
 
 		private void ScaleSubdomainSolidVector(ISubdomain subdomain, IVector vector)

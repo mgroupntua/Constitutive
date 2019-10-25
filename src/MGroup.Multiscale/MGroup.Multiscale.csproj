@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="MGroup.Analyzers" Version="1.0.296" />
-    <PackageReference Include="MGroup.FEM" Version="1.0.238" />
+    <PackageReference Include="MGroup.FEM" Version="1.0.300" />
     <PackageReference Include="MGroup.MSolve.Logging" Version="1.0.294" />
   </ItemGroup>
 
