@@ -5,6 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MGroup.LinearAlgebra" Version="1.0.88" />
+    <ProjectReference Include="..\..\..\LinearAlgebra\src\MGroup.LinearAlgebra\MGroup.LinearAlgebra.csproj" />
   </ItemGroup>
 </Project>

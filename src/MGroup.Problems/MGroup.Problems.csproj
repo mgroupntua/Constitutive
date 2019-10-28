@@ -5,13 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MGroup.Analyzers" Version="1.0.84" />
-    <PackageReference Include="MGroup.LinearAlgebra" Version="1.0.88" />
-    <PackageReference Include="MGroup.MSolve.Discretization" Version="1.0.89" />
+    <Folder Include="Properties\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Properties\" />
+    <ProjectReference Include="..\..\..\LinearAlgebra\src\MGroup.LinearAlgebra\MGroup.LinearAlgebra.csproj" />
+    <ProjectReference Include="..\..\..\MSolve.Analyzers\src\MGroup.Analyzers\MGroup.Analyzers.csproj" />
+    <ProjectReference Include="..\..\..\MSolve.Core\src\MGroup.MSolve.Discretization\MGroup.MSolve.Discretization.csproj" />
   </ItemGroup>
 
 </Project>
