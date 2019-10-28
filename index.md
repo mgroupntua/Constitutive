@@ -1,5 +1,5 @@
 ### About
-Contains a material models library and an implementation of FE2 multiscale homogenization schemes.
+Contains a material models library.
 
 ### Documentation
 - [Programming manual](programming.md)
