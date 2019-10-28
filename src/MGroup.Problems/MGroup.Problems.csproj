@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>George Stavroulakis, Serafeim Bakalakos, Dimitris Tsapetis</Authors>
+    <Product>MSolve</Product>
+    <Description>A series of classes for the composition of the PDEs to be numerically solved in the context of computational mechanics problems</Description>
+    <PackageProjectUrl>http://mgroup.ntua.gr</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mgroupntua/MSolve.Constitutive</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,9 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\LinearAlgebra\src\MGroup.LinearAlgebra\MGroup.LinearAlgebra.csproj" />
-    <ProjectReference Include="..\..\..\MSolve.Analyzers\src\MGroup.Analyzers\MGroup.Analyzers.csproj" />
-    <ProjectReference Include="..\..\..\MSolve.Core\src\MGroup.MSolve.Discretization\MGroup.MSolve.Discretization.csproj" />
+    <PackageReference Include="MGroup.Analyzers" Version="1.0.296" />
+    <PackageReference Include="MGroup.LinearAlgebra" Version="1.0.251" />
+    <PackageReference Include="MGroup.MSolve.Discretization" Version="1.0.294" />
+    <PackageReference Include="MGroup.MSolve.Solvers" Version="1.0.294" />
   </ItemGroup>
 
 </Project>

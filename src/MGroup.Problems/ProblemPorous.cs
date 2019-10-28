@@ -9,8 +9,8 @@ using MGroup.MSolve.Discretization.Interfaces;
 using MGroup.MSolve.Discretization.Loads;
 using MGroup.MSolve.Discretization.Providers;
 using MGroup.MSolve.FEM.Interfaces;
-using MGroup.Solvers;
-using MGroup.Solvers.LinearSystems;
+using MGroup.MSolve.Solvers;
+using MGroup.MSolve.Solvers.LinearSystems;
 
 namespace MGroup.Problems
 {
@@ -110,19 +110,19 @@ namespace MGroup.Problems
 	//      }
 	//  }
 
-	//  //TODO: this should be done by an assembler class
-	//  //TODO: make sure this is called whenever the ordering changes
-	//  private CsrMatrix BuildQFromSubdomain(ISubdomain subdomain) 
-	//  {
-	//      int numFreeDofs = subdomain.FreeDofOrdering.NumFreeDofs;
-	//      var qSubdomain = DokRowMajor.CreateEmpty(numFreeDofs, numFreeDofs);
-	//      DofTable allDofs = subdomain.FreeDofOrdering.FreeDofs;
-	//      foreach (var element in subdomain.Elements)
-	//      {
-	//          if (!(element.ElementType is IPorousFiniteElement)) continue;
+		////TODO: this should be done by an assembler class
+		////TODO: make sure this is called whenever the ordering changes
+		//private CsrMatrix BuildQFromSubdomain(ISubdomain subdomain) 
+		//{
+		//	int numFreeDofs = subdomain.FreeDofOrdering.NumFreeDofs;
+		//	var qSubdomain = DokRowMajor.CreateEmpty(numFreeDofs, numFreeDofs);
+		//	DofTable allDofs = subdomain.FreeDofOrdering.FreeDofs;
+		//	foreach (var element in subdomain.Elements)
+		//	{
+		//		if (!(element.ElementType is IPorousElement)) continue;
 
-	//          var e = (IPorousFiniteElement)element.ElementType;
-	//          IMatrix q = e.CouplingMatrix(element);
+		//		var e = (IPorousElement)element.ElementType;
+		//		IMatrix q = e.CouplingMatrix(element);
 
 	//          int iElementMatrixRow = 0;
 	//          for (int i = 0; i < element.ElementType.DofEnumerator.GetDofTypesForMatrixAssembly(element).Count; i++)
