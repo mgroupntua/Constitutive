@@ -1,5 +1,5 @@
 ![alt text](http://mgroup.ntua.gr/wp-content/uploads/2018/05/MGroup52.png "MGroup")
-# MSolve.Constitutive
+# Constitutive
 
 MSolve library that includes standard material models (phenomenological laws) as well as implementations of 
 multiscale homogenization schemes for the modeling of microscopically heterogeneous materials.
@@ -54,7 +54,7 @@ You can choose either to clone the solution or downloads it as a zip file.
 
  ![alt text](https://github.com/mgroupntua/MSolve.Edu/blob/master/Images/5.png "5")
 
-6. Click clone and Visual Studio will automatically download and import **MSolve.Constittutive**
+6. Click clone and Visual Studio will automatically download and import **MGroup.Constitutive**
 
 
 ### Download as ZIP
@@ -62,11 +62,11 @@ You can choose either to clone the solution or downloads it as a zip file.
 
 ![alt text](https://github.com/mgroupntua/MSolve.Edu/blob/master/Images/CloneOrDownload.png "1")
 
-2. Click **Download ZIP** option. **MSolve.Constitutive** will be downloaded as a ZIP file.
+2. Click **Download ZIP** option. **MGroup.Constitutive** will be downloaded as a ZIP file.
 
 3. Extract the ZIP file to the folder of choice.
 
-4. Double click on **MSolve.Constitutive.sln** file to open the code with Visual Studio
+4. Double click on **MGroup.Constitutive.sln** file to open the code with Visual Studio
 
   
 
