@@ -15,7 +15,7 @@ using MGroup.Constitutive.Structural;
 //TODO: I am not too fond of the provider storing global sized matrices. However it is necessary to abstract from the analyzers 
 //      the various matrices in coupled problems (e.g. stiffness, porous, coupling).
 //TODO: Right now this class decides when to build or rebuild the matrices. The analyzer should decide that.
-namespace MGroup.Problems
+namespace MGroup.Constitutive.Structural
 {
 	public class ProblemStructural : IImplicitIntegrationProvider, IStaticProvider, INonLinearProvider
 	{
