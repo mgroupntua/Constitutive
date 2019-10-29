@@ -47,9 +47,14 @@ steps:
     verbosityPack: 'Minimal'
     configuration: '$(buildConfiguration)'
 
-- script: |
-    dotnet test --logger trx --no-build /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=$(Build.SourcesDirectory)/coverage/ $(testProject)
-  displayName: 'Runs tests'
+- task: DotNetCoreCLI@2
+  displayName: Runs Tests (develop)
+  condition: eq(variables['Build.SourceBranch'], 'refs/heads/develop')
+  inputs:
+    command: 'test'
+    projects: '**/*[Tt]ests/*.csproj'
+    arguments: '--configuration $(BuildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+    publishTestResults: true
 
 
 # - task: SonarCloudAnalyze@1
