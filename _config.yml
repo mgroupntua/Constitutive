@@ -1,8 +1,8 @@
-title: MSolve.Constitutive
+title: Constitutive
 email: info@mgroup.ntua.gr
 description: > # this means to ignore newlines until "baseurl:"
  Material models library, and multiscale homogenization schemes.
-baseurl: "/MSolve.Constitutive" # the subpath of your site, e.g. /blog
+baseurl: "/Constitutive" # the subpath of your site, e.g. /blog
 
 url: "" # the base hostname & protocol for your site
 
