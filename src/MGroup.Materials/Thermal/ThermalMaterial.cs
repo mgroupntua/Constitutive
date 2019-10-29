@@ -1,6 +1,8 @@
+using MGroup.MSolve.Constitutive;
+
 namespace MGroup.Materials
 {
-	public class ThermalMaterial
+	public class ThermalMaterial : IThermalMaterial
 	{
 		/// <summary>
 		/// Constructs a new material for the purposes of heat transfer applications. 
