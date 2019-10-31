@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Product>MSolve</Product>
     <Authors>George Stavroulakis</Authors>
-    <Description>A series of constitutive laws and corresponding AnalysisWorkflow providers, pertaining to the solution of computational mechanics problems</Description>
+    <Description>A series of constitutive laws and corresponding AnalysisWorkflow providers, pertaining to the solution of porous media problems</Description>
     <PackageProjectUrl>http://mgroup.ntua.gr/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mgroupntua/Constitutive</RepositoryUrl>
     <PackageIconUrl>https://github.com/mgroupntua/Constitutive/raw/develop/MGroupConstitutivePorousMedia.png</PackageIconUrl>
