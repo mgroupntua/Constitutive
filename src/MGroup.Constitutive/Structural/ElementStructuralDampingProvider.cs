@@ -1,5 +1,5 @@
 using MGroup.LinearAlgebra.Matrices;
-using MGroup.MSolve.Discretization.Interfaces;
+using MGroup.MSolve.Discretization;
 
 //TODO: Should this be in the Problems project?
 namespace MGroup.Constitutive.Structural

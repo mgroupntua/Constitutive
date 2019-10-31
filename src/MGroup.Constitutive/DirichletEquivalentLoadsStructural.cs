@@ -1,7 +1,7 @@
-using MGroup.MSolve.AnalysisWorkflow;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.LinearAlgebra.Vectors;
-using MGroup.MSolve.Discretization.Interfaces;
+using MGroup.MSolve.Discretization;
+using MGroup.MSolve.Discretization.Loads;
 
 //TODO: time logging must be refactored
 //TODO: perhaps this belongs to Solvers.Assemblers, since the vector type depends on the solver. In that case, the 

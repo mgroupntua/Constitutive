@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{605A2168-921
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AFAC1FF2-E1FB-4D6A-BA47-1711C0CD91FB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MGroup.Constitutive", "src\MGroup.Materials\MGroup.Constitutive.csproj", "{7C73582A-0316-4857-AC20-A7A9477D84B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MGroup.Constitutive", "src\MGroup.Constitutive\MGroup.Constitutive.csproj", "{7C73582A-0316-4857-AC20-A7A9477D84B3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
