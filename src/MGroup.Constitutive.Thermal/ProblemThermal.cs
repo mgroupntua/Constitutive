@@ -8,7 +8,6 @@ using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.Loads;
 using MGroup.MSolve.Solution;
 using MGroup.MSolve.Solution.LinearSystems;
-using MGroup.Constitutive.Structural;
 
 //TODO: Usually the LinearSystem is passed in, but for GetRHSFromHistoryLoad() it is stored as a field. Decide on one method.
 //TODO: I am not too fond of the provider storing global sized matrices.
@@ -21,15 +20,15 @@ namespace MGroup.Constitutive.Thermal
 		private readonly IModel model;
 		private readonly ISolver solver;
 		private IReadOnlyDictionary<int, ILinearSystem> linearSystems;
-		private ElementStructuralStiffnessProvider conductivityProvider = new ElementStructuralStiffnessProvider();
-		private ElementStructuralMassProvider capacityProvider = new ElementStructuralMassProvider();
+		private ElementStructuralConductivityProvider conductivityProvider = new ElementStructuralConductivityProvider();
+		private ElementStructuralCapacityProvider capacityProvider = new ElementStructuralCapacityProvider();
 
 		public ProblemThermal(IModel model, ISolver solver)
 		{
 			this.model = model;
 			this.linearSystems = solver.LinearSystems;
 			this.solver = solver;
-			this.DirichletLoadsAssembler = new DirichletEquivalentLoadsStructural(conductivityProvider);
+			this.DirichletLoadsAssembler = new DirichletEquivalentLoadsThermal(conductivityProvider);
 		}
 
 		public IDirichletEquivalentLoadsAssembler DirichletLoadsAssembler { get; }

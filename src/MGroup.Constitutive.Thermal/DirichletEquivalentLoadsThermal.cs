@@ -6,17 +6,17 @@ using MGroup.MSolve.Discretization.Loads;
 //TODO: time logging must be refactored
 //TODO: perhaps this belongs to Solvers.Assemblers, since the vector type depends on the solver. In that case, the 
 //      elementMatrixProvider should be injected by the problem/provider.
-namespace MGroup.Constitutive
+namespace MGroup.Constitutive.Thermal
 {
 	/// <summary>
 	/// Calculates the equivalent nodal forces (at the subdomain level) due to Dirichlet boundary conditions.
 	/// Authors: Maria Tavlaki
 	/// </summary>
-	public class DirichletEquivalentLoadsStructural : IDirichletEquivalentLoadsAssembler
+	public class DirichletEquivalentLoadsThermal : IDirichletEquivalentLoadsAssembler
 	{
 		private IElementMatrixProvider elementProvider; //TODO: not sure if df = K * du is the best way to calcuate df.
 
-		public DirichletEquivalentLoadsStructural(IElementMatrixProvider elementProvider)
+		public DirichletEquivalentLoadsThermal(IElementMatrixProvider elementProvider)
 		{
 			this.elementProvider = elementProvider;
 		}
