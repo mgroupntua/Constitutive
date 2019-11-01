@@ -12,11 +12,11 @@
 
   <ItemGroup>
     <PackageReference Include="MGroup.LinearAlgebra" Version="1.0.310" />
-    <PackageReference Include="MGroup.MSolve.AnalysisWorkflow" Version="1.0.336" />
-    <PackageReference Include="MGroup.MSolve.Constitutive" Version="1.0.336" />
-    <PackageReference Include="MGroup.MSolve.Discretization" Version="1.0.336" />
-    <PackageReference Include="MGroup.MSolve.Logging" Version="1.0.336" />
-    <PackageReference Include="MGroup.MSolve.Solution" Version="1.0.336" />
+    <PackageReference Include="MGroup.MSolve.AnalysisWorkflow" Version="1.0.343" />
+    <PackageReference Include="MGroup.MSolve.Constitutive" Version="1.0.343" />
+    <PackageReference Include="MGroup.MSolve.Discretization" Version="1.0.343" />
+    <PackageReference Include="MGroup.MSolve.Logging" Version="1.0.343" />
+    <PackageReference Include="MGroup.MSolve.Solution" Version="1.0.343" />
   </ItemGroup>
 
 </Project>
