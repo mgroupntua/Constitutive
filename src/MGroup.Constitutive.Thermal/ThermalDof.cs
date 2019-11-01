@@ -1,6 +1,6 @@
 using MGroup.MSolve.Discretization;
 
-namespace MMGroup.Constitutive.Thermal
+namespace MGroup.Constitutive.Thermal
 {
     /// <summary>
     /// Degree of freedom corresponding to the temperature at a single point. Implements enum pattern.

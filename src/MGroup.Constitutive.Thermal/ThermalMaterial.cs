@@ -1,6 +1,6 @@
 using MGroup.MSolve.Constitutive;
 
-namespace MGroup.Materials
+namespace MGroup.Constitutive.Thermal
 {
 	public class ThermalMaterial : IThermalMaterial
 	{

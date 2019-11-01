@@ -3,7 +3,7 @@ using MGroup.LinearAlgebra.Matrices;
 using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.Constitutive;
 
-namespace MGroup.Constitutive.Structural.Shells
+namespace MGroup.Constitutive.Structural.ShellElements
 {
 	/// <summary>
 	/// Isotropic elastic shell material that accounts for no out of plane shear deformation

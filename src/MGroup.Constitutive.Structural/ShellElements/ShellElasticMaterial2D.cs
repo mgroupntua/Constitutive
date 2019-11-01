@@ -2,7 +2,7 @@ using System;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Constitutive;
 
-namespace MGroup.Constitutive.Structural.Shells
+namespace MGroup.Constitutive.Structural.ShellElements
 {
 	/// <summary>
 	/// An elastic isotropic material to be used in shell finite element formulations that take into account the
