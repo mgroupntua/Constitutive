@@ -24,13 +24,12 @@ variables:
   testProject: 'tests/MGroup.Multiscale.Tests'
 
 steps:
-- task: DotNetCoreCLI@2
-  name: dotnetRestore
-  displayName: "Restore nugets"
+- task: UseGitVersion@5
   inputs:
-    command: 'restore'
-    verbosityRestore: 'Normal'
-    feedRestore: 'MSolve-Nugets'
+    versionSpec: '5.x'
+    includePrerelease: true
+    useConfigFile: true
+    configFilePath: 'GitVersion.yml'
 
 
 # - task: SonarCloudPrepare@1
@@ -48,7 +47,7 @@ steps:
   displayName: "Build projects"
   inputs:
     command: 'build'
-    arguments: '-p:Version=$(Major).$(Minor).$(Build.BuildId)'
+    arguments: '-p:Version=$(GitVersion.SemVer)'
     verbosityPack: 'Minimal'
     configuration: '$(buildConfiguration)'
 
@@ -88,7 +87,7 @@ steps:
   inputs:
     command: 'pack'
     versioningScheme: 'byEnvVar'
-    versionEnvVar: 'Version'
+    versionEnvVar: 'GitVersion.SemVer'
     verbosityPack: 'Minimal'
 
 - task: PublishBuildArtifacts@1
@@ -99,21 +98,21 @@ steps:
     ArtifactName: 'drop'
 
 - task: DotNetCoreCLI@2
-  name: dotnetPushNuget
+  name: dotnetPushNugetPublic
   condition: ne(variables['Build.Reason'], 'PullRequest')
-  displayName: "Push nugets to feed"
+  displayName: "Push nugets to public feed"
   inputs:
     command: 'push'
     packagesToPush: '$(build.artifactStagingDirectory)/*.nupkg'
     verbosityPack: 'Minimal'
-    feedPublish: 'MSolve-Nugets'
+    feedPublish: 'MSolve/MGroup'
 
 - task: DotNetCoreCLI@2
   enabled: false
   condition: ne(variables['Build.Reason'], 'PullRequest')
-  name: dotnetPushSymbol
+  name: dotnetPushSymbolPublic
   displayName: "Publishes symbol nugets"
   inputs:
     command: 'push'
     searchPatternPush: '$(Build.ArtifactStagingDirectory)/*.snupkg'
-    feedPublish: 'MSolve-Nugets'
+    feedPublish: 'MSolve/MGroup'
