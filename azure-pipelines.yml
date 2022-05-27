@@ -48,7 +48,15 @@ steps:
 #     projectKey: 'MSolve.Constitutive'
 #     extraProperties: 'sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/coverage/coverage.opencover.xml'
 
-
+- task: DotNetCoreCLI@2
+  name: dotnetRestore
+  displayName: "Restore nugets"
+  inputs:
+    command: 'restore'
+    verbosityRestore: 'Normal'
+    feedsToUse: 'config'
+    nugetConfigPath: 'NuGet.config'
+    
 - task: DotNetCoreCLI@2
   name: dotnetBuild
   displayName: "Build projects"
