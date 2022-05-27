@@ -24,12 +24,19 @@ variables:
   testProject: 'tests/MGroup.Multiscale.Tests'
 
 steps:
-- task: UseGitVersion@5
+- task: PowerShell@2
+  displayName: Install gitversion.tool
   inputs:
-    versionSpec: '5.x'
-    includePrerelease: true
-    useConfigFile: true
-    configFilePath: 'GitVersion.yml'
+    targetType: inline
+    script: dotnet tool install --tool-path .. gitversion.tool
+    pwsh: true
+
+- task: PowerShell@2
+  displayName: Set SemVer from git history
+  inputs:
+    targetType: inline
+    script: ../dotnet-gitversion /output buildserver
+    pwsh: true
 
 
 # - task: SonarCloudPrepare@1
@@ -47,18 +54,20 @@ steps:
   displayName: "Build projects"
   inputs:
     command: 'build'
-    arguments: '-p:Version=$(GitVersion.SemVer)'
+    arguments: '--no-restore --nologo -p:Version=$(GitVersion.SemVer)'
+    versioningScheme: 'byEnvVar'
+    versionEnvVar: 'Build.BuildNumber'
     verbosityPack: 'Minimal'
     configuration: '$(buildConfiguration)'
 
-- task: DotNetCoreCLI@2
-  displayName: Runs Tests (develop)
-  condition: eq(variables['Build.SourceBranch'], 'refs/heads/develop')
-  inputs:
-    command: 'test'
-    projects: '**/*[Tt]ests/*.csproj'
-    arguments: '--configuration $(BuildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
-    publishTestResults: true
+# - task: DotNetCoreCLI@2
+#   displayName: Runs Tests (develop)
+#   condition: eq(variables['Build.SourceBranch'], 'refs/heads/develop')
+# inputs:
+#   command: 'test'
+#   projects: '**/*[Tt]ests/*.csproj'
+#   arguments: '--configuration $(BuildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+#   publishTestResults: true
 
 
 # - task: SonarCloudAnalyze@1
@@ -86,6 +95,7 @@ steps:
   displayName: "Packages new nugets"
   inputs:
     command: 'pack'
+    arguments: '--nologo --no-build --no-restore'
     versioningScheme: 'byEnvVar'
     versionEnvVar: 'GitVersion.SemVer'
     verbosityPack: 'Minimal'

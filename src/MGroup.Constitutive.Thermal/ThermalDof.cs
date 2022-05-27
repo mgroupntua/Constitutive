@@ -1,4 +1,4 @@
-using MGroup.MSolve.Discretization;
+using MGroup.MSolve.Discretization.Dofs;
 
 namespace MGroup.Constitutive.Thermal
 {
@@ -6,7 +6,7 @@ namespace MGroup.Constitutive.Thermal
     /// Degree of freedom corresponding to the temperature at a single point. Implements enum pattern.
     /// Authors: Serafeim Bakalakos
     /// </summary>
-    public class ThermalDof : IDofType
+    public class ThermalDof : IThermalDofType
     {
         /// <summary>
         /// This dof corresponds to the temperature.

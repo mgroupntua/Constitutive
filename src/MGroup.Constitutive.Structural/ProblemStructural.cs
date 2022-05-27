@@ -1,44 +1,48 @@
 using System.Collections.Generic;
+using MGroup.Constitutive.Structural.Providers;
 using MGroup.MSolve.AnalysisWorkflow;
-using MGroup.LinearAlgebra.Matrices;
-using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.AnalysisWorkflow.Providers;
 using MGroup.MSolve.Discretization;
-using MGroup.MSolve.Discretization.Loads;
+using MGroup.MSolve.Discretization.Dofs;
+using MGroup.MSolve.Discretization.Entities;
+using MGroup.MSolve.Discretization.BoundaryConditions;
 using MGroup.MSolve.Solution;
-using MGroup.MSolve.Solution.LinearSystems;
+using MGroup.MSolve.Solution.LinearSystem;
+using MGroup.MSolve.Solution.AlgebraicModel;
+using System.Linq;
+using MGroup.Constitutive.Structural.BoundaryConditions;
 
 //TODO: Usually the LinearSystem is passed in, but for GetRHSFromHistoryLoad() it is stored as a field. Decide on one method.
-//TODO: I am not too fond of the provider storing global sized matrices. However it is necessary to abstract from the analyzers 
-//      the various matrices in coupled problems (e.g. stiffness, porous, coupling).
 //TODO: Right now this class decides when to build or rebuild the matrices. The analyzer should decide that.
 namespace MGroup.Constitutive.Structural
 {
-	public class ProblemStructural : IImplicitIntegrationProvider, IStaticProvider, INonLinearProvider
+	public class ProblemStructural : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
-		private Dictionary<int, IMatrix> mass, damping, stiffnessFreeFree;
-		private Dictionary<int, IMatrixView> stiffnessFreeConstr, stiffnessConstrFree, stiffnessConstrConstr;
+		private IGlobalMatrix mass, damping, stiffness;
 		private readonly IModel model;
+		private readonly IAlgebraicModel algebraicModel;
 		private readonly ISolver solver;
-		private IReadOnlyDictionary<int, ILinearSystem> linearSystems;
 		private ElementStructuralStiffnessProvider stiffnessProvider = new ElementStructuralStiffnessProvider();
 		private ElementStructuralMassProvider massProvider = new ElementStructuralMassProvider();
 		private ElementStructuralDampingProvider dampingProvider = new ElementStructuralDampingProvider();
+		private readonly IElementMatrixPredicate rebuildStiffnessPredicate = new MaterialModifiedElementMarixPredicate();
 
-		public ProblemStructural(IModel model, ISolver solver)
+		public ProblemStructural(IModel model, IAlgebraicModel algebraicModel, ISolver solver)
 		{
 			this.model = model;
-			this.linearSystems = solver.LinearSystems;
+			this.algebraicModel = algebraicModel;
 			this.solver = solver;
-			this.DirichletLoadsAssembler = new DirichletEquivalentLoadsStructural(stiffnessProvider);
+			this.algebraicModel.BoundaryConditionsInterpreter = this;
+
+			ActiveDofs.AddDof(StructuralDof.TranslationX);
+			ActiveDofs.AddDof(StructuralDof.TranslationY);
+			ActiveDofs.AddDof(StructuralDof.TranslationZ);
+			ActiveDofs.AddDof(StructuralDof.RotationX);
+			ActiveDofs.AddDof(StructuralDof.RotationY);
+			ActiveDofs.AddDof(StructuralDof.RotationZ);
 		}
 
-		//public double AboserberE { get; set; }
-		//public double Aboseberv { get; set; }
-
-		public IDirichletEquivalentLoadsAssembler DirichletLoadsAssembler { get; } 
-
-		private IDictionary<int, IMatrix> Mass
+		private IGlobalMatrix Mass
 		{
 			get
 			{
@@ -47,7 +51,7 @@ namespace MGroup.Constitutive.Structural
 			}
 		}
 
-		private IDictionary<int, IMatrix> Damping
+		private IGlobalMatrix Damping
 		{
 			get
 			{
@@ -56,244 +60,230 @@ namespace MGroup.Constitutive.Structural
 			}
 		}
 
-		private IDictionary<int, IMatrix> StiffnessFreeFree
+		private IGlobalMatrix Stiffness
 		{
 			get
 			{
-				if (stiffnessFreeFree == null)
-					BuildStiffnessFreeFree();
+				if (stiffness == null)
+					BuildStiffness();
 				else
 				{
-					//TODO I am not too fond of side effects, especially in getters
-					RebuildBuildStiffnessFreeFree(); // This is the same but also resets the material modified properties. 
+					RebuildStiffness(); // This is the same but also resets the material modified properties. 
 				}
-				return stiffnessFreeFree;
+				return stiffness;
 			}
 		}
 
-		private void BuildStiffnessFreeFree() => stiffnessFreeFree = solver.BuildGlobalMatrices(stiffnessProvider);
+		public ActiveDofs ActiveDofs { get; } = new ActiveDofs();
 
-		private void BuildStiffnessSubmatrices()
+		private void BuildStiffness() => stiffness = algebraicModel.BuildGlobalMatrix(stiffnessProvider);
+
+		private void RebuildStiffness()
 		{
-			Dictionary<int, (IMatrix Kff, IMatrixView Kfc, IMatrixView Kcf, IMatrixView Kcc)> matrices =
-				solver.BuildGlobalSubmatrices(stiffnessProvider);
-
-			stiffnessFreeFree = new Dictionary<int, IMatrix>(model.Subdomains.Count);
-			stiffnessFreeConstr = new Dictionary<int, IMatrixView>(model.Subdomains.Count);
-			stiffnessConstrFree = new Dictionary<int, IMatrixView>(model.Subdomains.Count);
-			stiffnessConstrConstr = new Dictionary<int, IMatrixView>(model.Subdomains.Count);
-			foreach (ISubdomain subdomain in model.Subdomains)
-			{
-				int id = subdomain.ID;
-				stiffnessFreeFree.Add(id, matrices[id].Kff);
-				stiffnessFreeConstr.Add(id, matrices[id].Kfc);
-				stiffnessConstrFree.Add(id, matrices[id].Kcf);
-				stiffnessConstrConstr.Add(id, matrices[id].Kcc);
-			}
-		}
-
-		private void RebuildBuildStiffnessFreeFree()
-		{
-			//TODO: This will rebuild all the stiffnesses of all subdomains, if even one subdomain has MaterialsModified = true.
-			//      Optimize this, by passing a flag foreach subdomain to solver.BuildGlobalSubmatrices().
-
-			bool mustRebuild = false;
-			foreach (ISubdomain subdomain in model.Subdomains)
-			{
-				if (subdomain.StiffnessModified)
-				{
-					mustRebuild = true;
-					break;
-				}
-			}
-			if (mustRebuild) stiffnessFreeFree = solver.BuildGlobalMatrices(stiffnessProvider);
-			foreach (ISubdomain subdomain in model.Subdomains) subdomain.ResetMaterialsModifiedProperty();
+			algebraicModel.RebuildGlobalMatrixPartially(stiffness, model.EnumerateElements, stiffnessProvider, rebuildStiffnessPredicate);
 
 			// Original code kept, in case we need to reproduce its behavior.
 			//foreach (ISubdomain subdomain in model.Subdomains)
 			//{
 			//    if (subdomain.MaterialsModified)
 			//    {
-			//        stiffnessFreeFree[subdomain.ID] = solver.BuildGlobalMatrices(subdomain, stiffnessProvider);
+			//        stiffness[subdomain.ID] = solver.BuildGlobalMatrix(subdomain, stiffnessProvider);
 			//        subdomain.ResetMaterialsModifiedProperty();
 			//    }
 			//}
 		}
 
-		private void BuildMass() => mass = solver.BuildGlobalMatrices(massProvider);
+		private void BuildMass() => mass = algebraicModel.BuildGlobalMatrix(massProvider);
 
 		//TODO: With Rayleigh damping, C is more efficiently built using linear combinations of global K, M, 
 		//      instead of building and assembling element k, m matrices.
-		private void BuildDamping() => damping = solver.BuildGlobalMatrices(dampingProvider);
+		private void BuildDamping() => damping = algebraicModel.BuildGlobalMatrix(dampingProvider);
 
 		#region IAnalyzerProvider Members
 		public void ClearMatrices()
 		{
 			damping = null;
-			stiffnessFreeFree = null;
-			stiffnessConstrFree = null;
-			stiffnessConstrConstr = null;
+			stiffness = null;
 			mass = null;
 		}
 
 		public void Reset()
 		{
-			foreach (ISubdomain subdomain in model.Subdomains)
-			foreach (IElement element in subdomain.Elements)
-					element.ElementType.ClearMaterialState();
+			// TODO: Check if we should clear material state - (goat) removed that, seemed erroneous
+			//foreach (ISubdomain subdomain in model.Subdomains)
+			//	foreach (IElement element in subdomain.Elements)
+			//		element.ElementType.ClearMaterialState();
 
-					damping = null;
-			stiffnessFreeFree = null;
-			stiffnessConstrFree = null;
-			stiffnessConstrConstr = null;
+			damping = null;
+			stiffness = null;
 			mass = null;
 		}
-		#endregion 
+
+		public void GetProblemDofTypes()
+		{
+			//model.AllDofs.AddDof(StructuralDof.TranslationX);
+			//model.AllDofs.AddDof(StructuralDof.TranslationY);
+			//model.AllDofs.AddDof(StructuralDof.TranslationZ);
+			//model.AllDofs.AddDof(StructuralDof.RotationX);
+			//model.AllDofs.AddDof(StructuralDof.RotationY);
+			//model.AllDofs.AddDof(StructuralDof.RotationZ);
+		}
+		#endregion
 
 		#region IImplicitIntegrationProvider Members
 
-		public IMatrixView LinearCombinationOfMatricesIntoStiffness(ImplicitIntegrationCoefficients coefficients, 
-			ISubdomain subdomain)
+		public void LinearCombinationOfMatricesIntoEffectiveMatrix(TransientAnalysisCoefficients coefficients)
 		{
-			//TODO: 1) Why do we want Ks to be built only if it has not been factorized? 
-			//      2) When calling Ks[id], the matrix will be built anyway, due to the annoying side effects of the property.
-			//         Therefore, if the matrix was indeed factorized it would be built twice!
-			//      3) The provider should be decoupled from solver logic, such as knowing if the matrix is factorized. Knowledge
-			//         that the matrix has been altered by the solver could be implemented by observers, if necessary.
-			//      4) The analyzer should decide when global matrices need to be rebuilt, not the provider.
-			//      5) The need to rebuild the system matrix if the solver has modified it might be avoidable if the analyzer 
-			//         uses the appropriate order of operations. However, that may not always be possible. Such a feature 
-			//         (rebuild or store) is nice to have. Whow would be responsible, the solver, provider or assembler?
-			//      6) If the analyzer needs the system matrix, then it can call solver.PreventFromOverwritingMatrix(). E.g.
-			//          explicit dynamic analyzers would need to do that.
-			//if (linearSystem.IsMatrixOverwrittenBySolver) BuildKs();
-
-			int id = subdomain.ID;
-			IMatrix matrix = this.StiffnessFreeFree[id];
-			matrix.LinearCombinationIntoThis(coefficients.Stiffness, Mass[id], coefficients.Mass);
-			matrix.AxpyIntoThis(Damping[id], coefficients.Damping);
-			return matrix;
+			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
+			IGlobalMatrix matrix = Stiffness;
+			matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Mass, coefficients.SecondOrderDerivativeCoefficient);
+			matrix.AxpyIntoThis(Damping, coefficients.FirstOrderDerivativeCoefficient);
+			solver.LinearSystem.Matrix = matrix;
 		}
 
-		public void ProcessRhs(ImplicitIntegrationCoefficients coefficients, ISubdomain subdomain, IVector rhs)
+		public void ProcessRhs(TransientAnalysisCoefficients coefficients, IGlobalVector rhs)
 		{
 			// Method intentionally left empty.
 		}
-
-		public IDictionary<int, IVector> GetAccelerationsOfTimeStep(int timeStep)
+		//Transient
+		public IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
-			var d = new Dictionary<int, IVector>();
-			foreach (ILinearSystem linearSystem in linearSystems.Values)
+			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
+			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
 			{
-				d.Add(linearSystem.Subdomain.ID, linearSystem.CreateZeroVector());
+				boundaryCondition.CurrentTime = time;
 			}
 
-			if (model.MassAccelerationHistoryLoads.Count > 0)
+			IGlobalVector accelerations = algebraicModel.CreateZeroVector();
+			algebraicModel.AddToGlobalVector(id =>
 			{
-				List<MassAccelerationLoad> m = new List<MassAccelerationLoad>(model.MassAccelerationHistoryLoads.Count);
-				foreach (IMassAccelerationHistoryLoad l in model.MassAccelerationHistoryLoads)
-					m.Add(new MassAccelerationLoad() { Amount = l[timeStep], DOF = l.DOF });
-
-				foreach (ISubdomain subdomain in model.Subdomains)
+				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
+				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
 				{
-					int[] subdomainToGlobalDofs = model.GlobalDofOrdering.MapFreeDofsSubdomainToGlobal(subdomain);
-					foreach ((INode node, IDofType dofType, int subdomainDofIdx) in subdomain.FreeDofOrdering.FreeDofs)
-					{
-						int globalDofIdx = subdomainToGlobalDofs[subdomainDofIdx];
-						foreach (var l in m)
-						{
-							if (dofType == l.DOF) d[subdomain.ID].Set(globalDofIdx, l.Amount);
-						}
-					}
-
-					//foreach (var nodeInfo in subdomain.GlobalNodalDOFsDictionary)
-					//{
-					//    foreach (var dofPair in nodeInfo.Value)
-					//    {
-					//        foreach (var l in m)
-					//        {
-					//            if (dofPair.Key == l.DOF && dofPair.Value != -1)
-					//            {
-					//                d[subdomain.ID].Set(dofPair.Value, l.Amount);
-					//            }
-					//        }
-					//    }
-					//}
+					boundaryCondition.CurrentTime = time;
 				}
-			}
 
-			//foreach (ElementMassAccelerationHistoryLoad load in model.ElementMassAccelerationHistoryLoads)
-			//{
-			//    MassAccelerationLoad hl = new MassAccelerationLoad() { Amount = load.HistoryLoad[timeStep] * 564000000, DOF = load.HistoryLoad.DOF };
-			//    load.Element.Subdomain.AddLocalVectorToGlobal(load.Element,
-			//        load.Element.ElementType.CalculateAccelerationForces(load.Element, (new MassAccelerationLoad[] { hl }).ToList()),
-			//        load.Element.Subdomain.Forces);
-			//}
+				return boundaryConditions
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalAccelerationBoundaryCondition>();
+			},
+				accelerations);
+			algebraicModel.AddToGlobalVector(boundaryConditions
+					.SelectMany(x => x.EnumerateDomainBoundaryConditions())
+					.OfType<IDomainAccelerationBoundaryCondition>(),
+				accelerations);
 
-			return d;
+			return accelerations;
 		}
 
-		public IDictionary<int, IVector> GetVelocitiesOfTimeStep(int timeStep)
+		public IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
-			var d = new Dictionary<int, IVector>();
-
-			foreach (ILinearSystem linearSystem in linearSystems.Values)
+			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
+			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
 			{
-				d.Add(linearSystem.Subdomain.ID, linearSystem.CreateZeroVector());
+				boundaryCondition.CurrentTime = time;
 			}
 
-			return d;
+			IGlobalVector velocities = algebraicModel.CreateZeroVector();
+			algebraicModel.AddToGlobalVector(id =>
+			{
+				var boundaryConditions = model.EnumerateBoundaryConditions(id);
+				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>().ToArray())
+				{
+					boundaryCondition.CurrentTime = time;
+				}
+
+				return boundaryConditions
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalVelocityBoundaryCondition>();
+			},
+				velocities);
+			algebraicModel.AddToGlobalVector(boundaryConditions
+					.SelectMany(x => x.EnumerateDomainBoundaryConditions())
+					.OfType<IDomainVelocityBoundaryCondition>(),
+				velocities);
+
+			return velocities;
 		}
 
-		public IDictionary<int, IVector> GetRhsFromHistoryLoad(int timeStep)
+		public IGlobalVector GetRhs(double time)
 		{
-			foreach (ISubdomain subdomain in model.Subdomains) subdomain.Forces.Clear(); //TODO: this is also done by model.AssignLoads()
+			solver.LinearSystem.RhsVector.Clear(); //TODO: this is also done by model.AssignLoads()
+			AssignRhs();
+			algebraicModel.AddToGlobalVector(EnumerateEquivalentNeumannBoundaryConditions, solver.LinearSystem.RhsVector);
 
-			model.AssignLoads(solver.DistributeNodalLoads);
-			model.AssignMassAccelerationHistoryLoads(timeStep);
-
-			var rhsVectors = new Dictionary<int, IVector>();
-			foreach (ISubdomain subdomain in model.Subdomains) rhsVectors.Add(subdomain.ID, subdomain.Forces);
-			return rhsVectors;
+			return solver.LinearSystem.RhsVector.Copy();
 		}
 
-		public IVector MassMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
-			=> this.Mass[subdomain.ID].Multiply(vector);
+		public IGlobalVector SecondOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		{
+			IGlobalVector result = algebraicModel.CreateZeroVector();
+			Mass.MultiplyVector(vector, result);
+			return result;
+		}
+		//
+		public IGlobalVector FirstOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		{
+			IGlobalVector result = algebraicModel.CreateZeroVector();
+			Damping.MultiplyVector(vector, result);
+			return result;
+		}
 
-		public IVector DampingMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
-			=> this.Damping[subdomain.ID].Multiply(vector);
+
+		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
+			model.EnumerateBoundaryConditions(subdomainID)
+				.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID)))
+				.OfType<INodalLoadBoundaryCondition>()
+				.Where(x => model.EnumerateBoundaryConditions(subdomainID)
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalDisplacementBoundaryCondition>()
+					.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
 
 		#endregion
 
 		#region IStaticProvider Members
-
-		public IMatrixView CalculateMatrix(ISubdomain subdomain)
+		public void CalculateMatrix()
 		{
-			if (stiffnessFreeFree == null) BuildStiffnessFreeFree();
-			return stiffnessFreeFree[subdomain.ID];
+			if (stiffness == null) BuildStiffness();
+			solver.LinearSystem.Matrix = stiffness;
 		}
-
-
-		public (IMatrixView matrixFreeFree, IMatrixView matrixFreeConstr, IMatrixView matrixConstrFree, 
-			IMatrixView matrixConstrConstr) CalculateSubMatrices(ISubdomain subdomain)
-		{
-			int id = subdomain.ID;
-			if ((stiffnessFreeFree == null) || (stiffnessFreeConstr == null) 
-				|| (stiffnessConstrFree == null) || (stiffnessConstrConstr == null))
-			{
-				BuildStiffnessSubmatrices();
-			}
-			return (stiffnessFreeFree[id], stiffnessFreeConstr[id], stiffnessConstrFree[id], stiffnessConstrConstr[id]);
-		}
-
 		#endregion
 
 		#region INonLinearProvider Members
+		public double CalculateRhsNorm(IGlobalVector rhs) => rhs.Norm2();
 
-		public double CalculateRhsNorm(IVectorView rhs) => rhs.Norm2();
-
-		public void ProcessInternalRhs(ISubdomain subdomain, IVectorView solution, IVector rhs) {}
-
+		public void ProcessInternalRhs(IGlobalVector solution, IGlobalVector rhs) { }
 		#endregion
+
+		public void AssignRhs()
+		{
+			solver.LinearSystem.RhsVector.Clear();
+			algebraicModel.AddToGlobalVector(id =>
+				model.EnumerateBoundaryConditions(id)
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalLoadBoundaryCondition>()
+					.Where(x => model.EnumerateBoundaryConditions(id)
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+						.OfType<INodalDisplacementBoundaryCondition>()
+						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false),
+				solver.LinearSystem.RhsVector);
+		}
+
+		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering() =>
+			model.EnumerateSubdomains()
+				.SelectMany(x => model.EnumerateBoundaryConditions(x.ID)
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions()).OfType<INodalDisplacementBoundaryCondition>()
+					.OrderBy(x => x.Node.ID)
+					.GroupBy(x => (x.Node.ID, x.DOF))
+					.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount))))
+				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
+
+		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering(int subdomainID) =>
+			model.EnumerateBoundaryConditions(subdomainID)
+				.SelectMany(x => x.EnumerateNodalBoundaryConditions()).OfType<INodalDisplacementBoundaryCondition>()
+				.OrderBy(x => x.Node.ID)
+				.GroupBy(x => (x.Node.ID, x.DOF))
+				.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
+				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
 	}
 }

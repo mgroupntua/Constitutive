@@ -21,8 +21,15 @@
 		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+	</PropertyGroup>
+
 	<PropertyGroup Label="Package">
 		<PackageId></PackageId>
+		<PackageProjectUrl>http://github.com/mgroupntua/Constitutive</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/mgroupntua/Constitutive</RepositoryUrl>
+		<Authors>George Stavroulakis, Serafeim Bakalakos, Dimitris Tsapetis</Authors>
 		<Company>MGroup</Company>
 		<!-- Optional: Include PDB in the built .nupkg to enable debugging -->
 		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>

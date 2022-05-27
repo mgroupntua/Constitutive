@@ -1,39 +1,42 @@
-using System;
 using System.Collections.Generic;
 using MGroup.MSolve.AnalysisWorkflow;
-using MGroup.LinearAlgebra.Matrices;
-using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.AnalysisWorkflow.Providers;
 using MGroup.MSolve.Discretization;
-using MGroup.MSolve.Discretization.Loads;
+using MGroup.MSolve.Discretization.Dofs;
+using MGroup.MSolve.Discretization.Entities;
+using MGroup.MSolve.Discretization.BoundaryConditions;
 using MGroup.MSolve.Solution;
-using MGroup.MSolve.Solution.LinearSystems;
+using MGroup.MSolve.Solution.LinearSystem;
+using MGroup.MSolve.Solution.AlgebraicModel;
+using MGroup.Constitutive.Thermal.Providers;
+using System.Linq;
+using MGroup.Constitutive.Thermal.BoundaryConditions;
 
 //TODO: Usually the LinearSystem is passed in, but for GetRHSFromHistoryLoad() it is stored as a field. Decide on one method.
 //TODO: I am not too fond of the provider storing global sized matrices.
 namespace MGroup.Constitutive.Thermal
 {
-	public class ProblemThermal : IImplicitIntegrationProvider, IStaticProvider, INonLinearProvider
+	public class ProblemThermal : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
-		private Dictionary<int, IMatrix> capacity, conductivityFreeFree;
-		private Dictionary<int, IMatrixView> conductivityFreeConstr, conductivityConstrFree, conductivityConstrConstr;
+		private IGlobalMatrix capacity, conductivity;
 		private readonly IModel model;
+		private readonly IAlgebraicModel algebraicModel;
 		private readonly ISolver solver;
-		private IReadOnlyDictionary<int, ILinearSystem> linearSystems;
-		private ElementStructuralConductivityProvider conductivityProvider = new ElementStructuralConductivityProvider();
-		private ElementStructuralCapacityProvider capacityProvider = new ElementStructuralCapacityProvider();
+		private ElementConductivityProvider conductivityProvider = new ElementConductivityProvider();
+		private ElementCapacityProvider capacityProvider = new ElementCapacityProvider();
+		private readonly IElementMatrixPredicate rebuildConductivityPredicate = new MaterialModifiedElementMarixPredicate();
 
-		public ProblemThermal(IModel model, ISolver solver)
+		public ProblemThermal(IModel model, IAlgebraicModel algebraicModel, ISolver solver)
 		{
 			this.model = model;
-			this.linearSystems = solver.LinearSystems;
+			this.algebraicModel = algebraicModel;
 			this.solver = solver;
-			this.DirichletLoadsAssembler = new DirichletEquivalentLoadsThermal(conductivityProvider);
+			algebraicModel.BoundaryConditionsInterpreter = this;
+
+			ActiveDofs.AddDof(ThermalDof.Temperature);
 		}
 
-		public IDirichletEquivalentLoadsAssembler DirichletLoadsAssembler { get; }
-
-		private IDictionary<int, IMatrix> Capacity
+		private IGlobalMatrix Capacity
 		{
 			get
 			{
@@ -42,155 +45,171 @@ namespace MGroup.Constitutive.Thermal
 			}
 		}
 
-		private IDictionary<int, IMatrix> Conductivity
+		private IGlobalMatrix Conductivity
 		{
 			get
 			{
-				if (conductivityFreeFree == null) BuildConductivityFreeFree();
+				if (conductivity == null) BuildConductivity();
 				//else RebuildConductivityMatrices();
-				return conductivityFreeFree;
+				return conductivity;
 			}
 		}
 
-		private void BuildConductivityFreeFree() => conductivityFreeFree = solver.BuildGlobalMatrices(conductivityProvider);
+		public ActiveDofs ActiveDofs { get; } = new ActiveDofs();
 
-		private void BuildConductivitySubmatrices()
-		{
-			Dictionary<int, (IMatrix Cff, IMatrixView Cfc, IMatrixView Ccf, IMatrixView Ccc)> matrices =
-				solver.BuildGlobalSubmatrices(conductivityProvider);
+		private void BuildConductivity() => conductivity = algebraicModel.BuildGlobalMatrix(conductivityProvider);
+		
+		private void RebuildConductivity() => algebraicModel.RebuildGlobalMatrixPartially(conductivity, 
+			model.EnumerateElements, conductivityProvider, rebuildConductivityPredicate);
 
-			conductivityFreeFree = new Dictionary<int, IMatrix>(model.Subdomains.Count);
-			conductivityFreeConstr = new Dictionary<int, IMatrixView>(model.Subdomains.Count);
-			conductivityConstrFree = new Dictionary<int, IMatrixView>(model.Subdomains.Count);
-			conductivityConstrConstr = new Dictionary<int, IMatrixView>(model.Subdomains.Count);
-			foreach (ISubdomain subdomain in model.Subdomains)
-			{
-				int id = subdomain.ID;
-				conductivityFreeFree.Add(id, matrices[id].Cff);
-				conductivityFreeConstr.Add(id, matrices[id].Cfc);
-				conductivityConstrFree.Add(id, matrices[id].Ccf);
-				conductivityConstrConstr.Add(id, matrices[id].Ccc);
-			}
-		}
-
-		private void RebuildConductivityFreeFree()
-		{
-			//TODO: This will rebuild all the stiffnesses of all subdomains, if even one subdomain has MaterialsModified = true.
-			//      Optimize this, by passing a flag foreach subdomain to solver.BuildGlobalSubmatrices().
-
-			bool mustRebuild = false;
-			foreach (ISubdomain subdomain in model.Subdomains)
-			{
-				if (subdomain.StiffnessModified)
-				{
-					mustRebuild = true;
-					break;
-				}
-			}
-			if (mustRebuild) conductivityFreeFree = solver.BuildGlobalMatrices(conductivityProvider);
-			foreach (ISubdomain subdomain in model.Subdomains) subdomain.ResetMaterialsModifiedProperty();
-		}
-
-		private void BuildCapacity() => capacity = solver.BuildGlobalMatrices(capacityProvider);
+		private void BuildCapacity() => capacity = algebraicModel.BuildGlobalMatrix(capacityProvider);
 
 		#region IAnalyzerProvider Members
 		public void ClearMatrices()
 		{
 			capacity = null;
-			conductivityFreeFree = null;
-			conductivityFreeConstr = null;
-			conductivityConstrFree = null;
-			conductivityConstrConstr = null;
+			conductivity = null;
 		}
 
 		public void Reset()
 		{
-			foreach (ISubdomain subdomain in model.Subdomains)
-			foreach (IElement element in subdomain.Elements)
-					element.ElementType.ClearMaterialState();
+			// TODO: Check if we should clear material state - (goat) removed that, seemed erroneous
+			//foreach (ISubdomain subdomain in model.Subdomains)
+			//	foreach (IElement element in subdomain.Elements)
+			//		element.ElementType.ClearMaterialState();
 
-			conductivityFreeFree = null;
-			conductivityConstrFree = null;
-			conductivityConstrConstr = null;
+			conductivity = null;
 			capacity = null;
 		}
-		#endregion 
+
+		public void GetProblemDofTypes()
+		{
+			//model.AllDofs.AddDof(ThermalDof.Temperature);
+		}
+		#endregion
 
 		#region IImplicitIntegrationProvider Members
 
-		public IMatrixView LinearCombinationOfMatricesIntoStiffness(ImplicitIntegrationCoefficients coefficients,
-			ISubdomain subdomain)
+		public void LinearCombinationOfMatricesIntoEffectiveMatrix(TransientAnalysisCoefficients coefficients)
 		{
-			// The effective matrix should not overwrite the conductivity matrix. 
-			// In a dynamic analysis that is not purely implicit we need the conductivity matrix.
-			int id = subdomain.ID;
-			return Conductivity[id].LinearCombination(coefficients.Stiffness, Capacity[id], coefficients.Mass);
+			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
+			IGlobalMatrix matrix = Conductivity;
+			matrix.AxpyIntoThis(Capacity, coefficients.FirstOrderDerivativeCoefficient);
+			solver.LinearSystem.Matrix = matrix;
 		}
 
-		public void ProcessRhs(ImplicitIntegrationCoefficients coefficients, ISubdomain subdomain, IVector rhs)
+		public void ProcessRhs(TransientAnalysisCoefficients coefficients, IGlobalVector rhs)
 		{
 			// Method intentionally left empty.
 		}
 
-		public IDictionary<int, IVector> GetAccelerationsOfTimeStep(int timeStep)
+		public IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time) => algebraicModel.CreateZeroVector();
+
+		public IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
-			throw new InvalidOperationException("This is does not make sense in explicit methods for first order equations");
+			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
+			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IThermalDofType>>())
+			{
+				boundaryCondition.CurrentTime = time;
+			}
+
+			IGlobalVector velocities = algebraicModel.CreateZeroVector();
+			algebraicModel.AddToGlobalVector(id =>
+			{
+				var boundaryConditions = model.EnumerateBoundaryConditions(id);
+				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IThermalDofType>>().ToArray())
+				{
+					boundaryCondition.CurrentTime = time;
+				}
+
+				return boundaryConditions
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalCapacityBoundaryCondition>();
+			},
+				velocities);
+			algebraicModel.AddToGlobalVector(boundaryConditions
+					.SelectMany(x => x.EnumerateDomainBoundaryConditions())
+					.OfType<IDomainCapacityBoundaryCondition>(),
+				velocities);
+
+			return velocities;
 		}
 
-		public IDictionary<int, IVector> GetVelocitiesOfTimeStep(int timeStep)
+		public IGlobalVector GetRhs(double time)
 		{
-			throw new InvalidOperationException("This is not needed in explicit methods for first order equations");
+			solver.LinearSystem.RhsVector.Clear(); //TODO: this is also done by model.AssignLoads()
+			AssignRhs();
+			IGlobalVector result = solver.LinearSystem.RhsVector.Copy();
+
+			return result;
 		}
 
-		public IDictionary<int, IVector> GetRhsFromHistoryLoad(int timeStep)
+		public IGlobalVector SecondOrderDerivativeMatrixVectorProduct(IGlobalVector vector) => algebraicModel.CreateZeroVector();
+
+		public IGlobalVector FirstOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
 		{
-			foreach (ISubdomain subdomain in model.Subdomains) subdomain.Forces.Clear(); //TODO: this is also done by model.AssignLoads()
-
-			model.AssignNodalLoads(solver.DistributeNodalLoads); // Time-independent nodal loads
-			model.AssignTimeDependentNodalLoads(timeStep, solver.DistributeNodalLoads); // Time-dependent nodal loads
-
-			var rhsVectors = new Dictionary<int, IVector>();
-			foreach (ISubdomain subdomain in model.Subdomains) rhsVectors.Add(subdomain.ID, subdomain.Forces.Copy());
-			return rhsVectors;
+			IGlobalVector result = algebraicModel.CreateZeroVector();
+			Capacity.MultiplyVector(vector, result);
+			return result;
 		}
-
-		public IVector MassMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
-			=> this.Capacity[subdomain.ID].Multiply(vector);
-
-		//TODO: Ok this is weird. These methods should be named Second/First/ZeroOrderCoefficientTimesVector()
-		public IVector DampingMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
-			=> this.Conductivity[subdomain.ID].Multiply(vector);
 
 		#endregion
 
 		#region IStaticProvider Members
 
-		public IMatrixView CalculateMatrix(ISubdomain subdomain)
+		public void CalculateMatrix()
 		{
-			if (conductivityFreeFree == null) BuildConductivityFreeFree();
-			return conductivityFreeFree[subdomain.ID];
-		}
-
-		public (IMatrixView matrixFreeFree, IMatrixView matrixFreeConstr, IMatrixView matrixConstrFree,
-			IMatrixView matrixConstrConstr) CalculateSubMatrices(ISubdomain subdomain)
-		{
-			int id = subdomain.ID;
-			if ((conductivityFreeFree == null) || (conductivityFreeConstr == null) 
-				|| (conductivityConstrFree == null) || (conductivityConstrConstr == null))
-			{
-				BuildConductivitySubmatrices();
-			}
-			return (conductivityFreeFree[id], conductivityFreeConstr[id], 
-				conductivityConstrFree[id], conductivityConstrConstr[id]);
+			if (conductivity == null) BuildConductivity();
+			solver.LinearSystem.Matrix = conductivity;
 		}
 		#endregion
 
 		#region INonLinearProvider Members
 
-		public double CalculateRhsNorm(IVectorView rhs) => rhs.Norm2();
+		public double CalculateRhsNorm(IGlobalVector rhs) => rhs.Norm2();
 
-		public void ProcessInternalRhs(ISubdomain subdomain, IVectorView solution, IVector rhs) { }
+		public void ProcessInternalRhs(IGlobalVector solution, IGlobalVector rhs) { }
 
 		#endregion
+
+		public void AssignRhs()
+		{
+			solver.LinearSystem.RhsVector.Clear();
+			algebraicModel.AddToGlobalVector(id =>
+				model.EnumerateBoundaryConditions(id)
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalHeatFluxBoundaryCondition>()
+					.Where(x => model.EnumerateBoundaryConditions(id)
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+						.OfType<INodalTemperatureBoundaryCondition>()
+						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false), 
+					solver.LinearSystem.RhsVector);
+		}
+
+		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
+			model.EnumerateBoundaryConditions(subdomainID)
+				.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID)))
+				.OfType<INodalHeatFluxBoundaryCondition>()
+				.Where(x => model.EnumerateBoundaryConditions(subdomainID)
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalTemperatureBoundaryCondition>()
+					.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
+
+		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering() =>
+			model.EnumerateSubdomains()
+				.SelectMany(x => model.EnumerateBoundaryConditions(x.ID)
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions()).OfType<INodalTemperatureBoundaryCondition>()
+					.OrderBy(x => x.Node.ID)
+					.GroupBy(x => (x.Node.ID, x.DOF))
+					.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount))))
+				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
+
+		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering(int subdomainID) =>
+			model.EnumerateBoundaryConditions(subdomainID)
+				.SelectMany(x => x.EnumerateNodalBoundaryConditions()).OfType<INodalTemperatureBoundaryCondition>()
+				.OrderBy(x => x.Node.ID)
+				.GroupBy(x => (x.Node.ID, x.DOF))
+				.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
+				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
 	}
 }

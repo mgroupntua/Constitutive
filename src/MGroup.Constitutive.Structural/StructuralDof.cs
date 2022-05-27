@@ -1,5 +1,5 @@
 //TODO: implement a dynamic ordinal numbering that will change depending what dofs are used .
-using MGroup.MSolve.Discretization;
+using MGroup.MSolve.Discretization.Dofs;
 
 namespace MGroup.Constitutive.Structural
 {
@@ -8,7 +8,7 @@ namespace MGroup.Constitutive.Structural
     /// pattern.
     /// Authors: Serafeim Bakalakos
     /// </summary>
-    public class StructuralDof : IDofType
+    public class StructuralDof : IStructuralDofType
     {
         /// <summary>
         /// This dof corresponds to translation along X axis.
@@ -28,7 +28,7 @@ namespace MGroup.Constitutive.Structural
         /// <summary>
         /// This dof corresponds to rotation around X axis.
         /// </summary>
-        public static readonly StructuralDof RotationX = new StructuralDof("RotationX.");
+        public static readonly StructuralDof RotationX = new StructuralDof("RotationX");
 
         /// <summary>
         /// This dof corresponds to rotation around Y axis.
