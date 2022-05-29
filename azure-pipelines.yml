@@ -17,11 +17,6 @@ pool:
 variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  Version: '1.0.$(Build.BuildId)'
-  Major: '1'
-  Minor: '0'
-  Patch: '$(Build.BuildId)'
-  testProject: 'tests/MGroup.Multiscale.Tests'
 
 steps:
 - task: PowerShell@2
@@ -38,15 +33,14 @@ steps:
     script: ../dotnet-gitversion /output buildserver
     pwsh: true
 
-
-# - task: SonarCloudPrepare@1
-#   displayName: "Prepares SonarCloud analysis"
-#   inputs:
-#     SonarCloud: 'SonarCloud'
-#     organization: 'mgroupntua'
-#     scannerMode: 'MSBuild'
-#     projectKey: 'MSolve.Constitutive'
-#     extraProperties: 'sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/coverage/coverage.opencover.xml'
+- task: SonarCloudPrepare@1
+  displayName: "Prepare SonarCloud analysis"
+  inputs:
+    SonarCloud: 'SonarCloud'
+    organization: 'mgroupntua'
+    scannerMode: 'MSBuild'
+    projectKey: 'MSolve.Constitutive'
+    extraProperties: 'sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/coverage/coverage.opencover.xml'
 
 - task: DotNetCoreCLI@2
   name: dotnetRestore
@@ -62,56 +56,67 @@ steps:
   displayName: "Build projects"
   inputs:
     command: 'build'
-    arguments: '--no-restore --nologo -p:Version=$(GitVersion.SemVer)'
+    arguments: '--no-restore --nologo --configuration $(buildConfiguration) /p:AssemblyVersion=$(GitVersion.AssemblySemVer) /p:Version=$(GitVersion.SemVer) /p:SourceLinkCreate=true'
     versioningScheme: 'byEnvVar'
-    versionEnvVar: 'Build.BuildNumber'
-    verbosityPack: 'Minimal'
-    configuration: '$(buildConfiguration)'
+    versionEnvVar: 'GitVersion.AssemblySemVer'
 
-# - task: DotNetCoreCLI@2
-#   displayName: Runs Tests (develop)
-#   condition: eq(variables['Build.SourceBranch'], 'refs/heads/develop')
-# inputs:
-#   command: 'test'
-#   projects: '**/*[Tt]ests/*.csproj'
-#   arguments: '--configuration $(BuildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
-#   publishTestResults: true
+- task: PublishSymbols@2
+  displayName: "Publish symbols to Azure Devops artifacts"
+  inputs:
+    DetailedLog: true
+    SearchPattern: '**/bin/**/*.pdb'
+    IndexSources: false
+    SymbolServerType: 'TeamServices'
 
+- task: DotNetCoreCLI@2
+  enabled: false
+  displayName: Run tests (develop)
+  condition: eq(variables['Build.SourceBranch'], 'refs/heads/develop')
+  inputs:
+    command: 'test'
+    projects: '**/*[Tt]ests/*.csproj'
+    arguments: '--configuration $(BuildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+    publishTestResults: true
 
-# - task: SonarCloudAnalyze@1
-#   displayName: "Performs SonarCloud Analysis"
+- task: SonarCloudAnalyze@1
+    displayName: "Perform SonarCloud analysis"
 
-# - task: SonarCloudPublish@1
-#   displayName: 'Publish Quality Gate Results'
-#   inputs:
-#     pollingTimeoutSec: '300'
+- task: SonarCloudPublish@1
+  displayName: 'Publish Quality Gate results'
+  inputs:
+    pollingTimeoutSec: '300'
 
-# - task: PublishTestResults@2
-#   inputs:
-#     testRunner: VSTest
-#     testResultsFiles: '**/*.trx'
-
-# - task: PublishCodeCoverageResults@1
-#   inputs:
-#     summaryFileLocation: $(Build.SourcesDirectory)/coverage/Cobertura/Cobertura.xml
-#     reportDirectory: $(Build.SourcesDirectory)/coverage/Cobertura
-#     codecoverageTool: cobertura
+- task: PublishCodeCoverageResults@1
+  enabled: false
+  displayName: 'Publish code coverage results'
+  inputs:
+    summaryFileLocation: $(Build.SourcesDirectory)/coverage/Cobertura/Cobertura.xml
+    reportDirectory: $(Build.SourcesDirectory)/coverage/Cobertura
+    codecoverageTool: cobertura
 
 - task: DotNetCoreCLI@2
   name: dotnetPack
   condition: ne(variables['Build.Reason'], 'PullRequest')
-  displayName: "Packages new nugets"
+  displayName: "Package new nugets"
   inputs:
     command: 'pack'
-    arguments: '--nologo --no-build --no-restore'
+    arguments: '--nologo --no-restore'
+    nobuild: true
     versioningScheme: 'byEnvVar'
     versionEnvVar: 'GitVersion.SemVer'
-    verbosityPack: 'Minimal'
+    verbosityPack: 'Normal'
+
+- task: CopyFiles@2
+  enabled: false
+  displayName: "Copy everything in artifacts staging directory"
+  inputs:
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
 - task: PublishBuildArtifacts@1
   name: publishToFeed
   condition: ne(variables['Build.Reason'], 'PullRequest')
-  displayName: "Publishes to pipeline artifacts"
+  displayName: "Publish to pipeline artifacts"
   inputs:
     ArtifactName: 'drop'
 
@@ -129,7 +134,7 @@ steps:
   enabled: false
   condition: ne(variables['Build.Reason'], 'PullRequest')
   name: dotnetPushSymbolPublic
-  displayName: "Publishes symbol nugets"
+  displayName: "Publish symbol nugets"
   inputs:
     command: 'push'
     searchPatternPush: '$(Build.ArtifactStagingDirectory)/*.snupkg'
