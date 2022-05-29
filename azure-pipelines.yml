@@ -79,7 +79,7 @@ steps:
     publishTestResults: true
 
 - task: SonarCloudAnalyze@1
-    displayName: "Perform SonarCloud analysis"
+  displayName: "Perform SonarCloud Analysis"
 
 - task: SonarCloudPublish@1
   displayName: 'Publish Quality Gate results'
