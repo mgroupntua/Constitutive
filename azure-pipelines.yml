@@ -34,6 +34,7 @@ steps:
     pwsh: true
 
 - task: SonarCloudPrepare@1
+  condition: ne(variables['Build.Reason'], 'PullRequest')
   displayName: "Prepare SonarCloud analysis"
   inputs:
     SonarCloud: 'SonarCloud'
@@ -79,9 +80,11 @@ steps:
     publishTestResults: true
 
 - task: SonarCloudAnalyze@1
+  condition: ne(variables['Build.Reason'], 'PullRequest')
   displayName: "Perform SonarCloud Analysis"
 
 - task: SonarCloudPublish@1
+  condition: ne(variables['Build.Reason'], 'PullRequest')
   displayName: 'Publish Quality Gate results'
   inputs:
     pollingTimeoutSec: '300'
