@@ -9,97 +9,27 @@ namespace MGroup.Constitutive.Structural.Continuum
 	/// <summary>
 	/// Deformation Gradient based implementation of a Mooney Rivlin hyperelastic material and a
 	/// NeoHookian hyperelastic material for
-	/// Authors Gerasimos Sotiropoulos
+	/// Authors: Gerasimos Sotiropoulos
 	/// </summary>
 	public class HyperElasticMaterial3DDefGrad : IContinuumMaterial3DDefGrad
 	{
-
-		private readonly double[] strains = new double[6];
+		private readonly GenericConstitutiveLawState currentState;
 		private double[] stresses = new double[6];
 		private Matrix constitutiveMatrix = null;
 
-		public double YoungModulus { get; }
-
-		public double PoissonRatio { get; }
-
 		public double C1 { get; }
-
 		public double C2 { get; }
-
 		public double K_cons { get; }
 
-
-		//public double[] Coordinates { get; set; }
-
-		private readonly GenericConstitutiveLawState currentState;
-
-		public HyperElasticMaterial3DDefGrad(double youngModulus, double poissonRatio, double c1, double c2, double k_cons)
+		public HyperElasticMaterial3DDefGrad(double c1, double c2, double k_cons)
 		{
-			this.YoungModulus = youngModulus;
-			this.PoissonRatio = poissonRatio;
 			this.C1 = c1;
 			this.C2 = c2;
 			this.K_cons = k_cons;
 			currentState = new GenericConstitutiveLawState(this, new (string, double)[0]);
 		}
 
-		private double[,] GetConstitutiveMatrix()
-		{
-			double fE1 = YoungModulus / (double)(1 + PoissonRatio);
-			double fE2 = fE1 * PoissonRatio / (double)(1 - 2 * PoissonRatio);
-			double fE3 = fE1 + fE2;
-			double fE4 = fE1 * 0.5;
-			double[,] afE = new double[6, 6];
-			afE[0, 0] = fE3;
-			afE[0, 1] = fE2;
-			afE[0, 2] = fE2;
-			afE[1, 0] = fE2;
-			afE[1, 1] = fE3;
-			afE[1, 2] = fE2;
-			afE[2, 0] = fE2;
-			afE[2, 1] = fE2;
-			afE[2, 2] = fE3;
-			afE[3, 3] = fE4;
-			afE[4, 4] = fE4;
-			afE[5, 5] = fE4;
-
-			Vector s = (Matrix.CreateFromArray(afE)) * (Vector.CreateFromArray(strains));
-			stresses = s.CopyToArray();
-
-			return afE;
-		}
-
-		#region IFiniteElementMaterial Members
-		/// <summary>
-		/// Returns the ID of the material class indicating a specific material law implementation.
-		/// </summary>
-		public int ID
-		{
-			get { return 1; }
-		}
-
-		/// <summary>
-		/// Returns a boolean indicating if the constitutive matrix of the material has changed for the current iteratively update 
-		/// of the deformation state.
-		/// </summary>
-		public bool IsCurrentStateDifferent() => false;
-
-		/// <summary>
-		/// Resets the boolean that indicates if the constitutive matrix of the material has changed for the current iteratively update 
-		/// of the deformation state.
-		/// </summary>
-		public void ResetModified()
-		{
-		}
-
-		#endregion
-
-		#region IFiniteElementMaterial3D Members
-		/// <summary>
-		/// Returns the stresses of this material for the current strain state.
-		/// </summary>
-		public double[] Stresses { get => stresses; }
-
+		#region IConstitutiveLaw Members
 		/// <summary>
 		/// Returns the constitutive matrix of the material for the current strain state
 		/// </summary>
@@ -178,16 +108,9 @@ namespace MGroup.Constitutive.Structural.Continuum
 			constitutiveMatrix = Cons;
 			return stresses;
 		}
+		#endregion
 
-		/// <summary>
-		/// Clears the saved stress strain point connected to the last converged analysis step.
-		/// Currently not a valid operation.
-		/// </summary>
-		public void ClearState()
-		{
-			//throw new NotImplementedException();
-		}
-
+		#region IConstitutiveLawWithGenericState Members
 		/// <summary>
 		/// Saves the current stress strain state of the material (after convergence of the iterative solution process
 		/// for a given loading step).
@@ -199,15 +122,6 @@ namespace MGroup.Constitutive.Structural.Continuum
 			get => currentState;
 			set { }
 		}
-
-		/// <summary>
-		/// Clears stresses - Currently not a valid operation.
-		/// </summary>
-		public void ClearStresses()
-		{
-			//throw new NotImplementedException();
-		}
-
 		#endregion
 
 		#region ICloneable Members
@@ -215,7 +129,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// Creates a clone of material object with the same parameters.
 		/// </summary>
 		/// <returns>The created material clone</returns>
-		public object Clone() => new HyperElasticMaterial3DDefGrad(YoungModulus, PoissonRatio, C1, C2, K_cons);
+		public object Clone() => new HyperElasticMaterial3DDefGrad(C1, C2, K_cons);
 
 		/// <summary>
 		/// Creates a clone of material object with the same parameters.
