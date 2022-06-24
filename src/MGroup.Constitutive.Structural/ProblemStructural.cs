@@ -141,6 +141,15 @@ namespace MGroup.Constitutive.Structural
 			solver.LinearSystem.Matrix = matrix;
 		}
 
+		public void LinearCombinationOfMatricesIntoEffectiveMatrixNoOverwrite(TransientAnalysisCoefficients coefficients)
+		{
+			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
+			IGlobalMatrix matrix = Stiffness.Copy();
+			matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Mass, coefficients.SecondOrderDerivativeCoefficient);
+			matrix.AxpyIntoThis(Damping, coefficients.FirstOrderDerivativeCoefficient);
+			solver.LinearSystem.Matrix = matrix;
+		}
+
 		public void ProcessRhs(TransientAnalysisCoefficients coefficients, IGlobalVector rhs)
 		{
 			// Method intentionally left empty.

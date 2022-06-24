@@ -98,6 +98,13 @@ namespace MGroup.Constitutive.Thermal
 			solver.LinearSystem.Matrix = matrix;
 		}
 
+		public void LinearCombinationOfMatricesIntoEffectiveMatrixNoOverwrite(TransientAnalysisCoefficients coefficients)
+		{
+			IGlobalMatrix matrix = Conductivity.Copy();
+			matrix.AxpyIntoThis(Capacity, coefficients.FirstOrderDerivativeCoefficient);
+			solver.LinearSystem.Matrix = matrix;
+		}
+
 		public void ProcessRhs(TransientAnalysisCoefficients coefficients, IGlobalVector rhs)
 		{
 			// Method intentionally left empty.
