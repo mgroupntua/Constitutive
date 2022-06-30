@@ -291,13 +291,14 @@ namespace MGroup.Constitutive.Structural.Continuum
 			double B6 = Stresses[5];
 			double A = (F11) * Math.Pow(A1, 2) + (F22) * Math.Pow(A2, 2) + (F33) * Math.Pow(A3, 2);
 			A += A1 * A2 * (2 * F12) + A1 * A3 * (2 * F31) + A2 * A3 * (2 * F23);
-			A += (2 * F55) * Math.Pow(A5, 2) + (2 * F66) * Math.Pow(A6, 2) + (2 * F44) * Math.Pow(A4, 2);
+			A += (F55) * Math.Pow(A5, 2) + (F66) * Math.Pow(A6, 2) + (F44) * Math.Pow(A4, 2);
 			double B = (F11) * 2 * A1 * B1 + (F22) * 2 * A2 * B2 + (F33) * 2 * A3 * B3;
 			B += (A1 * B2 + A2 * B1) * (2 * F12) + (A1 * B3 + B1 * A3) * (2 * F31) + (A2 * B3 + A3 * B2) * (2 * F23);
-			B += (2 * F55) * 2 * A5 * B5 + (2 * F66) * 2 * A6 * B6 + (2 * F44) * 2 * A4 * B4;
+			B += (F55) * 2 * A5 * B5 + (F66) * 2 * A6 * B6 + (F44) * 2 * A4 * B4;
+			B += F1 * A1 + F2 * A2 + F3 * A3;
 			double C = (F11) * Math.Pow(B1, 2) + (F22) * Math.Pow(B2, 2) + (F33) * Math.Pow(B3, 2);
 			C += B1 * B2 * (2 * F12) + B1 * B3 * (2 * F31) + B2 * B3 * (2 * F23);
-			C += (2 * F55) * Math.Pow(B5, 2) + (2 * F66) * Math.Pow(B6, 2) + (2 * F44) * Math.Pow(B4, 2);
+			C += (F55) * Math.Pow(B5, 2) + (F66) * Math.Pow(B6, 2) + (F44) * Math.Pow(B4, 2);
 			C += F1 * B1 + F2 * B2 + F3 * B3 - 1;
 			var lambda1 = (-B + Math.Sqrt(Math.Pow(B, 2) - 4 * A * C)) / (2 * A);
 			var lambda2 = (-B - Math.Sqrt(Math.Pow(B, 2) - 4 * A * C)) / (2 * A);
