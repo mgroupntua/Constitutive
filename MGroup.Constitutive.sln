@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MGroup.Constitutive.Thermal
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MGroup.Constitutive.PorousMedia", "src\MGroup.Constitutive.PorousMedia\MGroup.Constitutive.PorousMedia.csproj", "{7C73582A-0316-4857-AC20-A7A9477D84B3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGroup.Constitutive.ConvectionDiffusion", "src\MGroup.Constitutive.ConvectionDiffusion\MGroup.Constitutive.ConvectionDiffusion.csproj", "{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +31,10 @@ Global
 		{7C73582A-0316-4857-AC20-A7A9477D84B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7C73582A-0316-4857-AC20-A7A9477D84B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7C73582A-0316-4857-AC20-A7A9477D84B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -37,6 +43,7 @@ Global
 		{B421F18B-52D8-4C0C-807C-7D54B2660202} = {605A2168-9218-4992-92C3-F59D9D268834}
 		{2F4E2103-DAB3-4C5B-AFAD-1307A519BF0A} = {605A2168-9218-4992-92C3-F59D9D268834}
 		{7C73582A-0316-4857-AC20-A7A9477D84B3} = {605A2168-9218-4992-92C3-F59D9D268834}
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107} = {605A2168-9218-4992-92C3-F59D9D268834}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AA335BA1-EE20-45AD-AE66-B0408B577C10}
