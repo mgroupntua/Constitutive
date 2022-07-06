@@ -3,11 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Product>MSolve</Product>
-    <Authors>Yannis Kalogeris, Serafeim Bakalakos</Authors>
-    <Description>A series of constitutive laws and corresponding AnalysisWorkflow providers, pertaining to the solution of thermal conductivity problems</Description>
+    <Authors>Orestis Papas, Christodoulou Theofilos</Authors>
+    <Description>A series of constitutive laws and corresponding AnalysisWorkflow providers, pertaining to the solution of convection-diffusion with linear source problems</Description>
     <PackageProjectUrl>http://mgroup.ntua.gr/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mgroupntua/Constitutive</RepositoryUrl>
-    <PackageIconUrl>https://github.com/mgroupntua/Constitutive/raw/develop/MGroupConstitutiveThermal.png</PackageIconUrl>
   </PropertyGroup>
 
   <ItemGroup>
