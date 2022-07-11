@@ -18,6 +18,7 @@ namespace MGroup.Constitutive.Structural
 {
 	public class ProblemStructural : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
+		private bool shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct = false;
 		private IGlobalMatrix mass, damping, stiffness;
 		private readonly IModel model;
 		private readonly IAlgebraicModel algebraicModel;
@@ -139,6 +140,7 @@ namespace MGroup.Constitutive.Structural
 			matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Mass, coefficients.SecondOrderDerivativeCoefficient);
 			matrix.AxpyIntoThis(Damping, coefficients.FirstOrderDerivativeCoefficient);
 			solver.LinearSystem.Matrix = matrix;
+			shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct = true;
 		}
 
 		public void LinearCombinationOfMatricesIntoEffectiveMatrixNoOverwrite(TransientAnalysisCoefficients coefficients)
@@ -238,6 +240,18 @@ namespace MGroup.Constitutive.Structural
 			return result;
 		}
 
+		public IGlobalVector ZeroOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		{
+			if (shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct)
+			{
+				BuildStiffness();
+				shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct = false;
+			}
+
+			IGlobalVector result = algebraicModel.CreateZeroVector();
+			Stiffness.MultiplyVector(vector, result);
+			return result;
+		}
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
 			model.EnumerateBoundaryConditions(subdomainID)
