@@ -4,11 +4,11 @@ using MGroup.MSolve.Discretization.Providers;
 
 namespace MGroup.Constitutive.ConvectionDiffusion.Providers
 {
-	public class ElementFirstTimeDerivativeMatrixProvider : IElementMatrixProvider
+	public class ElementCapacityMatrixProvider : IElementMatrixProvider
 	{
 		public IMatrix Matrix(IElementType element) =>
 			element is IConvectionDiffusionElementType ?
-				((IConvectionDiffusionElementType)element).FirstTimeDerivativeMatrix() :
+				((IConvectionDiffusionElementType)element).CapacityMatrix() :
 				LinearAlgebra.Matrices.Matrix.CreateZero(element.GetElementDofTypes().Count, element.GetElementDofTypes().Count);
 	}
 }

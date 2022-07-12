@@ -17,14 +17,14 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 {
 	public class ProblemConvectionDiffusion : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
-		private IGlobalMatrix convection, diffusion, production, firstTimeDerivativeMatrix;
+		private IGlobalMatrix convection, diffusion, production, capacityMatrix;
 		private readonly IModel model;
 		private readonly IAlgebraicModel algebraicModel;
 		private readonly ISolver solver;
 		private ElementProductionProvider productionProvider = new ElementProductionProvider();
 		private ElementDiffusionProvider diffusionProvider = new ElementDiffusionProvider();
 		private ElementConvectionProvider convectionProvider = new ElementConvectionProvider();
-		private ElementFirstTimeDerivativeMatrixProvider fistTimeDerivativeMatrixProvider = new ElementFirstTimeDerivativeMatrixProvider();
+		private ElementCapacityMatrixProvider fistTimeDerivativeMatrixProvider = new ElementCapacityMatrixProvider();
 
 		// TODO: Is this right?
 		private readonly IElementMatrixPredicate rebuildDiffusionPredicate = new MaterialModifiedElementMarixPredicate();
@@ -66,12 +66,12 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			}
 		}
 
-		private IGlobalMatrix FirstTimeDerivativeMatrix
+		private IGlobalMatrix CapacityMatrix
 		{
 			get
 			{
-				if (firstTimeDerivativeMatrix == null) BuildFirstOrderDerivativeMatrix();
-				return firstTimeDerivativeMatrix;
+				if (capacityMatrix == null) BuildCapacityMatrix();
+				return capacityMatrix;
 			}
 		}
 
@@ -83,7 +83,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		private void BuildProduction() => convection = algebraicModel.BuildGlobalMatrix(productionProvider);
 
-		private void BuildFirstOrderDerivativeMatrix() => convection = algebraicModel.BuildGlobalMatrix(fistTimeDerivativeMatrixProvider);
+		private void BuildCapacityMatrix() => convection = algebraicModel.BuildGlobalMatrix(fistTimeDerivativeMatrixProvider);
 
 		// TODO:Is this right?
 		private void RebuildDiffusion() => algebraicModel.RebuildGlobalMatrixPartially(diffusion, 
@@ -95,7 +95,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			convection = null;
 			diffusion = null;
 			production = null;
-			firstTimeDerivativeMatrix = null;
+			capacityMatrix = null;
 		}
 
 		public void Reset()
@@ -116,7 +116,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			IGlobalMatrix matrix = Diffusion;
 			matrix.AddIntoThis(Convection);
 			matrix.AddIntoThis(Production);
-			matrix.AxpyIntoThis(FirstTimeDerivativeMatrix, coefficients.FirstOrderDerivativeCoefficient);
+			matrix.AxpyIntoThis(CapacityMatrix, coefficients.FirstOrderDerivativeCoefficient);
 			solver.LinearSystem.Matrix = matrix;
 		}
 
@@ -125,7 +125,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			IGlobalMatrix matrix = Diffusion.Copy();
 			matrix.AddIntoThis(Convection);
 			matrix.AddIntoThis(Production);
-			matrix.AxpyIntoThis(FirstTimeDerivativeMatrix, coefficients.FirstOrderDerivativeCoefficient);
+			matrix.AxpyIntoThis(CapacityMatrix, coefficients.FirstOrderDerivativeCoefficient);
 			solver.LinearSystem.Matrix = matrix;
 		}
 
@@ -157,14 +157,14 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 				// TODO: Is this right?
 				return boundaryConditions
 					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-					.OfType<INodalFirstTimeDerivativeBoundaryCondition>();
+					.OfType<INodalCapacityBoundaryCondition>();
 			},
 			velocities);
 
 			// TODO: Is this right?
 			algebraicModel.AddToGlobalVector(boundaryConditions
 				.SelectMany(x => x.EnumerateDomainBoundaryConditions())
-				.OfType<IDomainFirstTimeDerivativeBoundaryCondition>(),
+				.OfType<IDomainCapacityBoundaryCondition>(),
 			velocities);
 
 			return velocities;
@@ -184,7 +184,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		public IGlobalVector FirstOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
 		{// TODO: is the matrix right?
 			IGlobalVector result = algebraicModel.CreateZeroVector();
-			FirstTimeDerivativeMatrix.MultiplyVector(vector, result);
+			CapacityMatrix.MultiplyVector(vector, result);
 			return result;
 		}
 
@@ -194,8 +194,8 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		public void CalculateMatrix()
 		{// TODO: is the matrix right?
-			if (firstTimeDerivativeMatrix == null) BuildFirstOrderDerivativeMatrix();
-			solver.LinearSystem.Matrix = firstTimeDerivativeMatrix;
+			if (capacityMatrix == null) BuildCapacityMatrix();
+			solver.LinearSystem.Matrix = capacityMatrix;
 		}
 		#endregion
 

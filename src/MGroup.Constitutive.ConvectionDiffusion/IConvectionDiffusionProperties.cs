@@ -6,7 +6,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 	/// </summary>
 	public interface IConvectionDiffusionProperties
 	{
-		double FirstTimeDerivativeCoeff { get; }
+		double CapacityCoeff { get; }
 
 		double DiffusionCoeff { get; }
 

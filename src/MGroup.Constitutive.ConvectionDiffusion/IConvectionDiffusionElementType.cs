@@ -9,7 +9,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		IMatrix ConvectionMatrix();
 
-		IMatrix FirstTimeDerivativeMatrix();
+		IMatrix CapacityMatrix();
 
 		IMatrix ProductionMatrix();
 	}
