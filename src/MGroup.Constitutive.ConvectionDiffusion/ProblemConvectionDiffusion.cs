@@ -17,6 +17,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 {
 	public class ProblemConvectionDiffusion : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
+		private bool shouldRebuildDiffusionMatrixForZeroOrderDerivativeMatrixVectorProduct = false;
 		private IGlobalMatrix convection, diffusion, production, capacityMatrix;
 		private readonly IModel model;
 		private readonly IAlgebraicModel algebraicModel;
@@ -77,13 +78,21 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		public ActiveDofs ActiveDofs { get; } = new ActiveDofs();
 
+		// Re malakes, eleos me to copy paste
+		// All work and no play make jack a dull boy
 		private void BuildConvection() => convection = algebraicModel.BuildGlobalMatrix(convectionProvider);
 
-		private void BuildDiffusion() => convection = algebraicModel.BuildGlobalMatrix(diffusionProvider);
+		// Re malakes, eleos me to copy paste
+		// All work and no play make jack a dull boy
+		private void BuildDiffusion() => diffusion = algebraicModel.BuildGlobalMatrix(diffusionProvider);
 
-		private void BuildProduction() => convection = algebraicModel.BuildGlobalMatrix(productionProvider);
+		// Re malakes, eleos me to copy paste
+		// All work and no play make jack a dull bo y
+		private void BuildProduction() => production = algebraicModel.BuildGlobalMatrix(productionProvider);
 
-		private void BuildCapacityMatrix() => convection = algebraicModel.BuildGlobalMatrix(fistTimeDerivativeMatrixProvider);
+		// Re malakes, eleos me to copy paste
+		// All work and no play make jack a  boy dull
+		private void BuildCapacityMatrix() => capacityMatrix = algebraicModel.BuildGlobalMatrix(fistTimeDerivativeMatrixProvider);
 
 		// TODO:Is this right?
 		private void RebuildDiffusion() => algebraicModel.RebuildGlobalMatrixPartially(diffusion, 
@@ -118,6 +127,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			matrix.AddIntoThis(Production);
 			matrix.AxpyIntoThis(CapacityMatrix, coefficients.FirstOrderDerivativeCoefficient);
 			solver.LinearSystem.Matrix = matrix;
+			shouldRebuildDiffusionMatrixForZeroOrderDerivativeMatrixVectorProduct = true;
 		}
 
 		public void LinearCombinationOfMatricesIntoEffectiveMatrixNoOverwrite(TransientAnalysisCoefficients coefficients)
@@ -188,11 +198,25 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			return result;
 		}
 
-		#endregion
+		public IGlobalVector ZeroOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		{// TODO: is the matrix right?
+			if (shouldRebuildDiffusionMatrixForZeroOrderDerivativeMatrixVectorProduct)
+			{
+				BuildDiffusion();
+				shouldRebuildDiffusionMatrixForZeroOrderDerivativeMatrixVectorProduct = false;
+			}
 
-		#region IStaticProvider Members
+			IGlobalVector result = algebraicModel.CreateZeroVector();
+			//Needs fix for diffusion matrx to exist (I suppose)
+			//DiffusionMatrix.MultiplyVector(vector, result);
+			return result;
+		}
 
-		public void CalculateMatrix()
+	#endregion
+
+	#region IStaticProvider Members
+
+	public void CalculateMatrix()
 		{// TODO: is the matrix right?
 			if (capacityMatrix == null) BuildCapacityMatrix();
 			solver.LinearSystem.Matrix = capacityMatrix;
