@@ -209,6 +209,9 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			IGlobalVector result = algebraicModel.CreateZeroVector();
 			//Needs fix for diffusion matrx to exist (I suppose)
 			//DiffusionMatrix.MultiplyVector(vector, result);
+
+			diffusion.MultiplyVector(vector, result); // TODO: Is that what george wanted?
+			
 			return result;
 		}
 
@@ -216,10 +219,16 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 	#region IStaticProvider Members
 
-	public void CalculateMatrix()
-		{// TODO: is the matrix right?
-			if (capacityMatrix == null) BuildCapacityMatrix();
-			solver.LinearSystem.Matrix = capacityMatrix;
+		public void CalculateMatrix()
+		{
+			if (diffusion == null) BuildDiffusion();
+			if (convection == null) BuildConvection();
+			if (production == null) BuildProduction();
+
+			var effectiveMatrix = diffusion.Copy();
+			effectiveMatrix.AddIntoThis(convection);
+			effectiveMatrix.AddIntoThis(production);
+			solver.LinearSystem.Matrix = effectiveMatrix;
 		}
 		#endregion
 

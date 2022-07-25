@@ -10,7 +10,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		double DiffusionCoeff { get; }
 
-		double ConvectionCoeff { get; }
+		double[] ConvectionCoeff { get; }
 
 		double DependentSourceCoeff { get; }
 

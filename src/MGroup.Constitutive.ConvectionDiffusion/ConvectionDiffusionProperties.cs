@@ -8,10 +8,10 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		/// </summary>
 		/// <param name="capacityCoeff">coefficient of the first time derivative term.</param>
 		/// <param name="diffusionCoeff">coefficient of the diffusion term.</param>
-		/// <param name="convectionCoeff">coefficent of the convection term.</param>
+		/// <param name="convectionCoeff">coefficent of the convection term, multiplied by the velocity vector</param>
 		/// <param name="dependentSourceCoeff">coefficient of the dependent term of the linear source.</param>
 		/// <param name="independentSourceCoeff">coefficient of the independent term of the linear source.</param>
-		public ConvectionDiffusionProperties(double capacityCoeff, double diffusionCoeff, double convectionCoeff, double dependentSourceCoeff, double independentSourceCoeff)
+		public ConvectionDiffusionProperties(double capacityCoeff, double diffusionCoeff, double[] convectionCoeff, double dependentSourceCoeff, double independentSourceCoeff)
 		{
 			CapacityCoeff = capacityCoeff;
 			DiffusionCoeff = diffusionCoeff;
@@ -24,7 +24,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		public double DiffusionCoeff { get; }
 
-		public double ConvectionCoeff { get; }
+		public double[] ConvectionCoeff { get; }
 
 		public double DependentSourceCoeff { get; }
 
