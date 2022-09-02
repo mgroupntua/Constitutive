@@ -23,6 +23,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		private readonly IAlgebraicModel algebraicModel;
 		private readonly ISolver solver;
 		private ElementProductionProvider productionProvider = new ElementProductionProvider();
+		private ElementIndependentProductionProvider independentProductionProvider = new ElementIndependentProductionProvider();
 		private ElementDiffusionProvider diffusionProvider = new ElementDiffusionProvider();
 		private ElementConvectionProvider convectionProvider = new ElementConvectionProvider();
 		private ElementCapacityMatrixProvider fistTimeDerivativeMatrixProvider = new ElementCapacityMatrixProvider();
@@ -243,6 +244,9 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		public void AssignRhs()
 		{
 			solver.LinearSystem.RhsVector.Clear();
+
+			algebraicModel.AddToGlobalVector(solver.LinearSystem.RhsVector, independentProductionProvider);
+
 			algebraicModel.AddToGlobalVector(id =>
 				model.EnumerateBoundaryConditions(id)
 					.SelectMany(x => x.EnumerateNodalBoundaryConditions())

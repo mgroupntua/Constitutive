@@ -12,5 +12,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		IMatrix CapacityMatrix();
 
 		IMatrix ProductionMatrix();
+
+		double[] ProductionVector();
 	}
 }
