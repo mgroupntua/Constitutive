@@ -11,11 +11,22 @@
 
   <ItemGroup>
     <PackageReference Include="MGroup.LinearAlgebra" Version="0.1.0-unstable.68" />
-    <PackageReference Include="MGroup.MSolve.Core" Version="0.2.0-unstable.40" />
+    <PackageReference Include="MGroup.MSolve.Core" Version="0.2.0-unstable.46" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="Interfaces\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Update="StyleCop.Analyzers" Version="1.2.0-beta.435">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 </Project>
