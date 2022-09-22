@@ -18,6 +18,7 @@ namespace MGroup.Constitutive.Thermal
 {
 	public class ProblemThermal : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
+		private bool shouldRebuildConductivityMatrixForZeroOrderDerivativeMatrixVectorProduct = false;
 		private IGlobalMatrix capacity, conductivity;
 		private readonly IModel model;
 		private readonly IAlgebraicModel algebraicModel;
@@ -96,6 +97,7 @@ namespace MGroup.Constitutive.Thermal
 			IGlobalMatrix matrix = Conductivity;
 			matrix.AxpyIntoThis(Capacity, coefficients.FirstOrderDerivativeCoefficient);
 			solver.LinearSystem.Matrix = matrix;
+			shouldRebuildConductivityMatrixForZeroOrderDerivativeMatrixVectorProduct = true;
 		}
 
 		public void LinearCombinationOfMatricesIntoEffectiveMatrixNoOverwrite(TransientAnalysisCoefficients coefficients)
@@ -157,6 +159,19 @@ namespace MGroup.Constitutive.Thermal
 		{
 			IGlobalVector result = algebraicModel.CreateZeroVector();
 			Capacity.MultiplyVector(vector, result);
+			return result;
+		}
+
+		public IGlobalVector ZeroOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		{
+			if (shouldRebuildConductivityMatrixForZeroOrderDerivativeMatrixVectorProduct)
+			{
+				BuildConductivity();
+				shouldRebuildConductivityMatrixForZeroOrderDerivativeMatrixVectorProduct = false;
+			}
+
+			IGlobalVector result = algebraicModel.CreateZeroVector();
+			Conductivity.MultiplyVector(vector, result);
 			return result;
 		}
 
