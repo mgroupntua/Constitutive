@@ -28,7 +28,6 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		private ElementConvectionProvider convectionProvider = new ElementConvectionProvider();
 		private ElementCapacityMatrixProvider fistTimeDerivativeMatrixProvider = new ElementCapacityMatrixProvider();
 
-		// TODO: Is this right?
 		private readonly IElementMatrixPredicate rebuildDiffusionPredicate = new MaterialModifiedElementMarixPredicate();
 
 		public ProblemConvectionDiffusion(IModel model, IAlgebraicModel algebraicModel, ISolver solver)
@@ -79,23 +78,14 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		public ActiveDofs ActiveDofs { get; } = new ActiveDofs();
 
-		// Re malakes, eleos me to copy paste
-		// All work and no play make jack a dull boy
 		private void BuildConvection() => convection = algebraicModel.BuildGlobalMatrix(convectionProvider);
 
-		// Re malakes, eleos me to copy paste
-		// All work and no play make jack a dull boy
 		private void BuildDiffusion() => diffusion = algebraicModel.BuildGlobalMatrix(diffusionProvider);
 
-		// Re malakes, eleos me to copy paste
-		// All work and no play make jack a dull bo y
 		private void BuildProduction() => production = algebraicModel.BuildGlobalMatrix(productionProvider);
 
-		// Re malakes, eleos me to copy paste
-		// All work and no play make jack a  boy dull
 		private void BuildCapacityMatrix() => capacityMatrix = algebraicModel.BuildGlobalMatrix(fistTimeDerivativeMatrixProvider);
 
-		// TODO:Is this right?
 		private void RebuildDiffusion() => algebraicModel.RebuildGlobalMatrixPartially(diffusion, 
 			model.EnumerateElements, diffusionProvider, rebuildDiffusionPredicate);
 
@@ -115,7 +105,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		public void GetProblemDofTypes()
 		{
-			// Contents were commented out, function no longer used
+			// function no longer used
 		}
 		#endregion
 
@@ -165,14 +155,12 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 					boundaryCondition.CurrentTime = time;
 				}
 
-				// TODO: Is this right?
 				return boundaryConditions
 					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
 					.OfType<INodalCapacityBoundaryCondition>();
 			},
 			velocities);
 
-			// TODO: Is this right?
 			algebraicModel.AddToGlobalVector(boundaryConditions
 				.SelectMany(x => x.EnumerateDomainBoundaryConditions())
 				.OfType<IDomainCapacityBoundaryCondition>(),
@@ -193,14 +181,14 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		public IGlobalVector SecondOrderDerivativeMatrixVectorProduct(IGlobalVector vector) => algebraicModel.CreateZeroVector();
 
 		public IGlobalVector FirstOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
-		{// TODO: is the matrix right?
+		{
 			IGlobalVector result = algebraicModel.CreateZeroVector();
 			CapacityMatrix.MultiplyVector(vector, result);
 			return result;
 		}
 
 		public IGlobalVector ZeroOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
-		{// TODO: is the matrix right?
+		{
 			if (shouldRebuildDiffusionMatrixForZeroOrderDerivativeMatrixVectorProduct)
 			{
 				BuildDiffusion();
@@ -208,10 +196,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			}
 
 			IGlobalVector result = algebraicModel.CreateZeroVector();
-			//Needs fix for diffusion matrx to exist (I suppose)
-			//DiffusionMatrix.MultiplyVector(vector, result);
-
-			diffusion.MultiplyVector(vector, result); // TODO: Is that what george wanted?
+			diffusion.MultiplyVector(vector, result);
 			
 			return result;
 		}

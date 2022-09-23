@@ -72,7 +72,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions
 			{
 				IReadOnlyList<INode> nodes = element.DofEnumerator.GetNodesForMatrixAssembly(element);
 				if (nodes.Any(x => unknownVariableDirichletBoundaryConditions.Count(d => d.Node.ID == x.ID) > 0))
-				{//TODO: Matrix should be Keffective? 
+				{
 					var elementMatrix = element.DiffusionMatrix().Copy();
 					elementMatrix.AddIntoThis(element.ConvectionMatrix());
 					elementMatrix.AddIntoThis(element.ProductionMatrix());
