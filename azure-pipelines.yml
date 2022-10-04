@@ -70,7 +70,7 @@ steps:
     SymbolServerType: 'TeamServices'
 
 - task: DotNetCoreCLI@2
-  enabled: false
+  enabled: true
   displayName: Run tests (develop)
   condition: eq(variables['Build.SourceBranch'], 'refs/heads/develop')
   inputs:
