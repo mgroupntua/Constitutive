@@ -137,8 +137,26 @@ namespace MGroup.Constitutive.Structural
 		{
 			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
 			IGlobalMatrix matrix = Stiffness;
-			matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Mass, coefficients.SecondOrderDerivativeCoefficient);
-			matrix.AxpyIntoThis(Damping, coefficients.FirstOrderDerivativeCoefficient);
+			if (coefficients.SecondOrderDerivativeCoefficient != 0)
+			{
+				matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Mass, coefficients.SecondOrderDerivativeCoefficient);
+				if (coefficients.FirstOrderDerivativeCoefficient != 0)
+				{
+					matrix.AxpyIntoThis(Damping, coefficients.FirstOrderDerivativeCoefficient);
+				}
+			}
+			else
+			{
+				if (coefficients.FirstOrderDerivativeCoefficient != 0)
+				{
+					matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Damping, coefficients.FirstOrderDerivativeCoefficient);
+				}
+				else
+				{
+					matrix.ScaleIntoThis(coefficients.ZeroOrderDerivativeCoefficient);
+				}
+			}
+
 			solver.LinearSystem.Matrix = matrix;
 			shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct = true;
 		}

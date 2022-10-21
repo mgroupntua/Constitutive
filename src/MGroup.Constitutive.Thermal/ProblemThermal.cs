@@ -95,7 +95,16 @@ namespace MGroup.Constitutive.Thermal
 		{
 			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
 			IGlobalMatrix matrix = Conductivity;
-			matrix.AxpyIntoThis(Capacity, coefficients.FirstOrderDerivativeCoefficient);
+			//matrix.AxpyIntoThis(Capacity, coefficients.FirstOrderDerivativeCoefficient);
+			if (coefficients.FirstOrderDerivativeCoefficient != 0)
+			{
+				matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Capacity, coefficients.FirstOrderDerivativeCoefficient);
+			}
+			else
+			{
+				matrix.ScaleIntoThis(coefficients.ZeroOrderDerivativeCoefficient);
+			}
+
 			solver.LinearSystem.Matrix = matrix;
 			shouldRebuildConductivityMatrixForZeroOrderDerivativeMatrixVectorProduct = true;
 		}

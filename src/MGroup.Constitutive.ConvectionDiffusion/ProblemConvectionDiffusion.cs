@@ -116,7 +116,16 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			IGlobalMatrix matrix = Diffusion;
 			matrix.AddIntoThis(Convection);
 			matrix.AddIntoThis(Production);
-			matrix.AxpyIntoThis(CapacityMatrix, coefficients.FirstOrderDerivativeCoefficient);
+			//matrix.AxpyIntoThis(CapacityMatrix, coefficients.FirstOrderDerivativeCoefficient);
+			if (coefficients.FirstOrderDerivativeCoefficient != 0)
+			{
+				matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, CapacityMatrix, coefficients.FirstOrderDerivativeCoefficient);
+			}
+			else
+			{
+				matrix.ScaleIntoThis(coefficients.ZeroOrderDerivativeCoefficient);
+			}
+
 			solver.LinearSystem.Matrix = matrix;
 			shouldRebuildDiffusionMatrixForZeroOrderDerivativeMatrixVectorProduct = true;
 		}
