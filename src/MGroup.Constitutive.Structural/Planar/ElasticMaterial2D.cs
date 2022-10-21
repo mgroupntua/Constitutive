@@ -1,7 +1,7 @@
 using System;
+
 using MGroup.Constitutive.Structural.Continuum;
 using MGroup.LinearAlgebra.Matrices;
-using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
 
@@ -15,7 +15,7 @@ namespace MGroup.Constitutive.Structural.Planar
 		private const string STRESS_X = "Stress X";
 		private const string STRESS_Y = "Stress Y";
 		private const string STRESS_XY = "Stress XY";
-		
+
 		private readonly double[] strains = new double[3];
 		private double[] stresses = new double[3];
 		private double[] stressesNew = new double[3];
@@ -27,7 +27,7 @@ namespace MGroup.Constitutive.Structural.Planar
 		public double YoungModulus { get; }
 
 		/// <summary>
-		/// Creastes a new object of <see cref="ElasticMaterial2D"/> class.
+		/// Creastes a new object of <see cref="ElasticMaterial2D "/> class.
 		/// </summary>
 		/// <param name="stressState"> The stress strain state of the 2D problem.</param>
 		public ElasticMaterial2D(double youngModulus, double poissonRatio, StressState2D stressState)
@@ -60,7 +60,7 @@ namespace MGroup.Constitutive.Structural.Planar
 		/// <summary>
 		/// Returns the stresses of this material for the current strain state.
 		/// </summary>
-		public double[] Stresses => stresses;
+		public double[] Stresses => stressesNew;
 
 		/// <summary>
 		/// Clears the saved stress strain point connected to the last converged analysis step.
@@ -96,6 +96,7 @@ namespace MGroup.Constitutive.Structural.Planar
 
 			return currentState;
 		}
+
 		IHaveState ICreateState.CreateState() => CreateState();
 		public GenericConstitutiveLawState CurrentState
 		{
@@ -136,7 +137,7 @@ namespace MGroup.Constitutive.Structural.Planar
 				constitutiveMatrix[2, 2] = (1 - 2 * PoissonRatio) / 2 * aux;
 			}
 
-			var stressesElastic = new double[6];
+			var stressesElastic = new double[3];
 			for (int i = 0; i < 3; i++)
 			{
 				stressesElastic[i] = this.stresses[i];
