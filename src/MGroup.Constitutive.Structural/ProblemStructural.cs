@@ -216,8 +216,8 @@ namespace MGroup.Constitutive.Structural
 			IGlobalVector velocities = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(id =>
 			{
-				var boundaryConditions = model.EnumerateBoundaryConditions(id);
-				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>().ToArray())
+				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
+				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
 				{
 					boundaryCondition.CurrentTime = time;
 				}

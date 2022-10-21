@@ -134,8 +134,8 @@ namespace MGroup.Constitutive.Thermal
 			IGlobalVector velocities = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(id =>
 			{
-				var boundaryConditions = model.EnumerateBoundaryConditions(id);
-				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IThermalDofType>>().ToArray())
+				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
+				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IThermalDofType>>())
 				{
 					boundaryCondition.CurrentTime = time;
 				}

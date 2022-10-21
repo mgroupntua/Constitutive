@@ -158,8 +158,8 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			algebraicModel.AddToGlobalVector(
 			id =>
 			{
-				var boundaryConditions = model.EnumerateBoundaryConditions(id);
-				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IConvectionDiffusionDofType>>().ToArray())
+				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
+				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IConvectionDiffusionDofType>>())
 				{
 					boundaryCondition.CurrentTime = time;
 				}
