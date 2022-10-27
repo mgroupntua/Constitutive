@@ -141,7 +141,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 
 		private GenericConstitutiveLawState currentState;
 
-		private double timePrevious, timeCurrent;
+		private double timePrevious = double.NaN, timeCurrent;
 
 		/// <summary>
 		///   The Poisson ratio value of an incompressible solid.
@@ -286,7 +286,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		///   The increment of time.
 		///   This is related to the history of incemental load. It is set 1.0 here for quick testing
 		/// </summary>
-		private double dtime { get => timeCurrent - timePrevious;  }
+		private double dtime { get => double.IsNaN(timePrevious) ? 1d : timeCurrent - timePrevious; }
 
 		/// <summary>
 		///   The constitutive matrix of the material.
@@ -393,6 +393,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			instantaneousShearModulus = shearModulusTemp;
 			instantaneousBulkModulus = bulkModulusTemp;
 
+			//TODO: Initialization is done prior to setting current time
 			var shearModulus = 0.0;
 			var bulkModulus = 0.0;
 			for (int iNME = 0; iNME < numberOfMaxwelElements; iNME++)
