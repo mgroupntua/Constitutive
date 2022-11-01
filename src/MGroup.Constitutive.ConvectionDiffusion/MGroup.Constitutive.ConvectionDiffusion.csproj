@@ -7,6 +7,7 @@
     <Description>A series of constitutive laws and corresponding AnalysisWorkflow providers, pertaining to the solution of convection-diffusion with linear source problems</Description>
     <PackageProjectUrl>http://mgroup.ntua.gr/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mgroupntua/Constitutive</RepositoryUrl>
+    <PackageIconUrl>https://github.com/mgroupntua/Constitutive/raw/develop/MGroupConstitutiveConvectionDiffusion.png</PackageIconUrl>
   </PropertyGroup>
 
   <ItemGroup>
