@@ -21,5 +21,6 @@ namespace MGroup.Constitutive.Structural.BoundaryConditions
 		}
 
 		public INodalBoundaryCondition<IStructuralDofType> WithAmount(double amount) => new NodalVelocity(Node, DOF, amount);
+		INodalModelQuantity<IStructuralDofType> INodalModelQuantity<IStructuralDofType>.WithAmount(double amount) => new NodalVelocity(Node, DOF, amount);
 	}
 }

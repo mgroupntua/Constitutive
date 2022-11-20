@@ -1,5 +1,4 @@
 using MGroup.MSolve.Discretization;
-using MGroup.MSolve.Discretization.Dofs;
 using MGroup.MSolve.Discretization.Entities;
 using MGroup.MSolve.Discretization.BoundaryConditions;
 
@@ -21,5 +20,6 @@ namespace MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions
 		}
 
 		public INodalBoundaryCondition<IConvectionDiffusionDofType> WithAmount(double amount) => new NodalUnknownVariableFlux(Node, DOF, amount);
+		INodalModelQuantity<IConvectionDiffusionDofType> INodalModelQuantity<IConvectionDiffusionDofType>.WithAmount(double amount) => new NodalUnknownVariableFlux(Node, DOF, amount);
 	}
 }

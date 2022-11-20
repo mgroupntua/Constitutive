@@ -21,5 +21,6 @@ namespace MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions
 		}
 
 		public INodalBoundaryCondition<IConvectionDiffusionDofType> WithAmount(double amount) => new NodalUnknownVariable(Node, DOF, amount);
+		INodalModelQuantity<IConvectionDiffusionDofType> INodalModelQuantity<IConvectionDiffusionDofType>.WithAmount(double amount) => new NodalUnknownVariable(Node, DOF, amount);
 	}
 }

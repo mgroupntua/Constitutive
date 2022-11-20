@@ -1,7 +1,5 @@
 using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.BoundaryConditions;
-using MGroup.MSolve.Discretization.Dofs;
-using MGroup.MSolve.Discretization.Entities;
 
 namespace MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions
 {
@@ -18,5 +16,6 @@ namespace MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions
 		}
 
 		public IDomainBoundaryCondition<IConvectionDiffusionDofType> WithAmount(double amount) => new DomainUnknownVariable(DOF, amount);
+		IDomainModelQuantity<IConvectionDiffusionDofType> IDomainModelQuantity<IConvectionDiffusionDofType>.WithAmount(double amount) => new DomainUnknownVariable(DOF, amount);
 	}
 }

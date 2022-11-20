@@ -18,5 +18,6 @@ namespace MGroup.Constitutive.Structural.BoundaryConditions
 		}
 
 		public IDomainBoundaryCondition<IStructuralDofType> WithAmount(double amount) => new DomainVelocity(DOF, amount);
+		IDomainModelQuantity<IStructuralDofType> IDomainModelQuantity<IStructuralDofType>.WithAmount(double amount) => new DomainVelocity(DOF, amount);
 	}
 }

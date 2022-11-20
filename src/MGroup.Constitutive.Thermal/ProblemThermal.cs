@@ -11,6 +11,8 @@ using MGroup.MSolve.Solution.AlgebraicModel;
 using MGroup.Constitutive.Thermal.Providers;
 using System.Linq;
 using MGroup.Constitutive.Thermal.BoundaryConditions;
+using MGroup.MSolve.AnalysisWorkflow.Transient;
+using MGroup.Constitutive.Thermal.InitialConditions;
 
 //TODO: Usually the LinearSystem is passed in, but for GetRHSFromHistoryLoad() it is stored as a field. Decide on one method.
 //TODO: I am not too fond of the provider storing global sized matrices.
@@ -95,14 +97,13 @@ namespace MGroup.Constitutive.Thermal
 		{
 			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
 			IGlobalMatrix matrix = Conductivity;
-			//matrix.AxpyIntoThis(Capacity, coefficients.FirstOrderDerivativeCoefficient);
-			if (coefficients.FirstOrderDerivativeCoefficient != 0)
+			if (coefficients[DifferentiationOrder.First] != 0)
 			{
-				matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Capacity, coefficients.FirstOrderDerivativeCoefficient);
+				matrix.LinearCombinationIntoThis(coefficients[DifferentiationOrder.Zero], Capacity, coefficients[DifferentiationOrder.First]);
 			}
 			else
 			{
-				matrix.ScaleIntoThis(coefficients.ZeroOrderDerivativeCoefficient);
+				matrix.ScaleIntoThis(coefficients[DifferentiationOrder.Zero]);
 			}
 
 			solver.LinearSystem.Matrix = matrix;
@@ -112,7 +113,7 @@ namespace MGroup.Constitutive.Thermal
 		public void LinearCombinationOfMatricesIntoEffectiveMatrixNoOverwrite(TransientAnalysisCoefficients coefficients)
 		{
 			IGlobalMatrix matrix = Conductivity.Copy();
-			matrix.AxpyIntoThis(Capacity, coefficients.FirstOrderDerivativeCoefficient);
+			matrix.AxpyIntoThis(Capacity, coefficients[DifferentiationOrder.First]);
 			solver.LinearSystem.Matrix = matrix;
 		}
 
@@ -121,9 +122,9 @@ namespace MGroup.Constitutive.Thermal
 			// Method intentionally left empty.
 		}
 
-		public IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time) => algebraicModel.CreateZeroVector();
+		private IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time) => algebraicModel.CreateZeroVector();
 
-		public IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
+		private IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
 			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
 			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IThermalDofType>>())
@@ -153,6 +154,38 @@ namespace MGroup.Constitutive.Thermal
 			return velocities;
 		}
 
+		private IGlobalVector GetZeroOrderDerivativeVectorFromInitialConditions(double time)
+		{
+			IGlobalVector temperatures = algebraicModel.CreateZeroVector();
+
+			if (time == 0)
+			{
+				algebraicModel.AddToGlobalVector(
+				id =>
+				{
+					var initialConditions = model.EnumerateInitialConditions(id).ToArray();
+					return initialConditions
+						.SelectMany(x => x.EnumerateNodalInitialConditions())
+						.OfType<INodalTemperatureInitialCondition>();
+				},
+				temperatures);
+
+				algebraicModel.AddToGlobalVector(model.EnumerateInitialConditions(model.EnumerateSubdomains().First().ID)
+					.SelectMany(x => x.EnumerateDomainInitialConditions())
+					.OfType<IDomainTemperatureInitialCondition>(),
+				temperatures);
+			}
+
+			return temperatures;
+		}
+
+		public IGlobalVector GetVectorFromModelConditions(DifferentiationOrder differentiationOrder, double time) => differentiationOrder switch
+		{
+			DifferentiationOrder.Zero => GetZeroOrderDerivativeVectorFromInitialConditions(time),
+			DifferentiationOrder.First => GetFirstOrderDerivativeVectorFromBoundaryConditions(time),
+			_ => algebraicModel.CreateZeroVector(),
+		};
+
 		public IGlobalVector GetRhs(double time)
 		{
 			solver.LinearSystem.RhsVector.Clear(); //TODO: this is also done by model.AssignLoads()
@@ -162,16 +195,16 @@ namespace MGroup.Constitutive.Thermal
 			return result;
 		}
 
-		public IGlobalVector SecondOrderDerivativeMatrixVectorProduct(IGlobalVector vector) => algebraicModel.CreateZeroVector();
+		private IGlobalVector SecondOrderDerivativeMatrixVectorProduct(IGlobalVector vector) => algebraicModel.CreateZeroVector();
 
-		public IGlobalVector FirstOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		private IGlobalVector FirstOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
 		{
 			IGlobalVector result = algebraicModel.CreateZeroVector();
 			Capacity.MultiplyVector(vector, result);
 			return result;
 		}
 
-		public IGlobalVector ZeroOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		private IGlobalVector ZeroOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
 		{
 			if (shouldRebuildConductivityMatrixForZeroOrderDerivativeMatrixVectorProduct)
 			{
@@ -183,6 +216,13 @@ namespace MGroup.Constitutive.Thermal
 			Conductivity.MultiplyVector(vector, result);
 			return result;
 		}
+
+		public IGlobalVector MatrixVectorProduct(DifferentiationOrder differentiationOrder, IGlobalVector vector) => differentiationOrder switch
+		{
+			DifferentiationOrder.Zero => ZeroOrderDerivativeMatrixVectorProduct(vector),
+			DifferentiationOrder.First => FirstOrderDerivativeMatrixVectorProduct(vector),
+			_ => algebraicModel.CreateZeroVector(),
+		};
 
 		#endregion
 

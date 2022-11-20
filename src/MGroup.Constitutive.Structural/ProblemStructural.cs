@@ -11,6 +11,8 @@ using MGroup.MSolve.Solution.LinearSystem;
 using MGroup.MSolve.Solution.AlgebraicModel;
 using System.Linq;
 using MGroup.Constitutive.Structural.BoundaryConditions;
+using MGroup.MSolve.AnalysisWorkflow.Transient;
+using MGroup.Constitutive.Structural.InitialConditions;
 
 //TODO: Usually the LinearSystem is passed in, but for GetRHSFromHistoryLoad() it is stored as a field. Decide on one method.
 //TODO: Right now this class decides when to build or rebuild the matrices. The analyzer should decide that.
@@ -137,23 +139,23 @@ namespace MGroup.Constitutive.Structural
 		{
 			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
 			IGlobalMatrix matrix = Stiffness;
-			if (coefficients.SecondOrderDerivativeCoefficient != 0)
+			if (coefficients[DifferentiationOrder.Second] != 0)
 			{
-				matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Mass, coefficients.SecondOrderDerivativeCoefficient);
-				if (coefficients.FirstOrderDerivativeCoefficient != 0)
+				matrix.LinearCombinationIntoThis(coefficients[DifferentiationOrder.Zero], Mass, coefficients[DifferentiationOrder.Second]);
+				if (coefficients[DifferentiationOrder.First] != 0)
 				{
-					matrix.AxpyIntoThis(Damping, coefficients.FirstOrderDerivativeCoefficient);
+					matrix.AxpyIntoThis(Damping, coefficients[DifferentiationOrder.First]);
 				}
 			}
 			else
 			{
-				if (coefficients.FirstOrderDerivativeCoefficient != 0)
+				if (coefficients[DifferentiationOrder.First] != 0)
 				{
-					matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Damping, coefficients.FirstOrderDerivativeCoefficient);
+					matrix.LinearCombinationIntoThis(coefficients[DifferentiationOrder.Zero], Damping, coefficients[DifferentiationOrder.First]);
 				}
 				else
 				{
-					matrix.ScaleIntoThis(coefficients.ZeroOrderDerivativeCoefficient);
+					matrix.ScaleIntoThis(coefficients[DifferentiationOrder.Zero]);
 				}
 			}
 
@@ -165,8 +167,8 @@ namespace MGroup.Constitutive.Structural
 		{
 			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
 			IGlobalMatrix matrix = Stiffness.Copy();
-			matrix.LinearCombinationIntoThis(coefficients.ZeroOrderDerivativeCoefficient, Mass, coefficients.SecondOrderDerivativeCoefficient);
-			matrix.AxpyIntoThis(Damping, coefficients.FirstOrderDerivativeCoefficient);
+			matrix.LinearCombinationIntoThis(coefficients[DifferentiationOrder.Zero], Mass, coefficients[DifferentiationOrder.Second]);
+			matrix.AxpyIntoThis(Damping, coefficients[DifferentiationOrder.First]);
 			solver.LinearSystem.Matrix = matrix;
 		}
 
@@ -174,8 +176,8 @@ namespace MGroup.Constitutive.Structural
 		{
 			// Method intentionally left empty.
 		}
-		//Transient
-		public IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time)
+
+		private IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
 			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
 			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
@@ -205,7 +207,7 @@ namespace MGroup.Constitutive.Structural
 			return accelerations;
 		}
 
-		public IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
+		private IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
 			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
 			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
@@ -232,8 +234,51 @@ namespace MGroup.Constitutive.Structural
 					.OfType<IDomainVelocityBoundaryCondition>(),
 				velocities);
 
+			if (time == 0)
+			{
+				algebraicModel.AddToGlobalVector(id =>
+				{
+					var initialConditions = model.EnumerateInitialConditions(id).ToArray();
+					return initialConditions
+						.SelectMany(x => x.EnumerateNodalInitialConditions())
+						.OfType<INodalVelocityInitialCondition>();
+				},
+					velocities);
+			}
+
 			return velocities;
 		}
+
+		private IGlobalVector GetZeroOrderDerivativeVectorFromInitialConditions(double time)
+		{
+			IGlobalVector displacements = algebraicModel.CreateZeroVector();
+			if (time == 0)
+			{
+				algebraicModel.AddToGlobalVector(id =>
+				{
+					var initialConditions = model.EnumerateInitialConditions(id).ToArray();
+					return initialConditions
+						.SelectMany(x => x.EnumerateNodalInitialConditions())
+						.OfType<INodalDisplacementInitialCondition>();
+				},
+					displacements);
+
+				algebraicModel.AddToGlobalVector(model.EnumerateInitialConditions(model.EnumerateSubdomains().First().ID)
+					.SelectMany(x => x.EnumerateDomainInitialConditions())
+					.OfType<IDomainDisplacementInitialCondition>(),
+				displacements);
+			}
+
+			return displacements;
+		}
+
+		public IGlobalVector GetVectorFromModelConditions(DifferentiationOrder differentiationOrder, double time) => differentiationOrder switch
+		{
+			DifferentiationOrder.Zero => GetZeroOrderDerivativeVectorFromInitialConditions(time),
+			DifferentiationOrder.First => GetFirstOrderDerivativeVectorFromBoundaryConditions(time),
+			DifferentiationOrder.Second => GetSecondOrderDerivativeVectorFromBoundaryConditions(time),
+			_ => algebraicModel.CreateZeroVector(),
+		};
 
 		public IGlobalVector GetRhs(double time)
 		{
@@ -244,21 +289,21 @@ namespace MGroup.Constitutive.Structural
 			return solver.LinearSystem.RhsVector.Copy();
 		}
 
-		public IGlobalVector SecondOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		private IGlobalVector SecondOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
 		{
 			IGlobalVector result = algebraicModel.CreateZeroVector();
 			Mass.MultiplyVector(vector, result);
 			return result;
 		}
 		//
-		public IGlobalVector FirstOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		private IGlobalVector FirstOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
 		{
 			IGlobalVector result = algebraicModel.CreateZeroVector();
 			Damping.MultiplyVector(vector, result);
 			return result;
 		}
 
-		public IGlobalVector ZeroOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
+		private IGlobalVector ZeroOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
 		{
 			if (shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct)
 			{
@@ -270,6 +315,14 @@ namespace MGroup.Constitutive.Structural
 			Stiffness.MultiplyVector(vector, result);
 			return result;
 		}
+
+		public IGlobalVector MatrixVectorProduct(DifferentiationOrder differentiationOrder, IGlobalVector vector) => differentiationOrder switch
+		{
+			DifferentiationOrder.Zero => ZeroOrderDerivativeMatrixVectorProduct(vector),
+			DifferentiationOrder.First => FirstOrderDerivativeMatrixVectorProduct(vector),
+			DifferentiationOrder.Second => SecondOrderDerivativeMatrixVectorProduct(vector),
+			_ => algebraicModel.CreateZeroVector(),
+		};
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
 			model.EnumerateBoundaryConditions(subdomainID)

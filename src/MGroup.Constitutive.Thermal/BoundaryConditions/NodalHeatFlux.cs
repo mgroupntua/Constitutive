@@ -21,5 +21,6 @@ namespace MGroup.Constitutive.Thermal.BoundaryConditions
 		}
 
 		public INodalBoundaryCondition<IThermalDofType> WithAmount(double amount) => new NodalHeatFlux(Node, DOF, amount);
+		INodalModelQuantity<IThermalDofType> INodalModelQuantity<IThermalDofType>.WithAmount(double amount) => new NodalHeatFlux(Node, DOF, amount);
 	}
 }

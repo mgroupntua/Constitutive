@@ -18,5 +18,6 @@ namespace MGroup.Constitutive.Thermal.BoundaryConditions
 		}
 
 		public IDomainBoundaryCondition<IThermalDofType> WithAmount(double amount) => new DomainHeatFlux(DOF, amount);
+		IDomainModelQuantity<IThermalDofType> IDomainModelQuantity<IThermalDofType>.WithAmount(double amount) => new DomainHeatFlux(DOF, amount);
 	}
 }
