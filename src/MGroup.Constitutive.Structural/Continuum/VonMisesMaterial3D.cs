@@ -211,7 +211,12 @@ namespace MGroup.Constitutive.Structural.Continuum
 		{
 			get
 			{
-				if (this.constitutiveMatrix == null) UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
+				if (this.constitutiveMatrix == null)
+				{
+					UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
+					this.constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				}
+
 				return constitutiveMatrix;
 			}
 		}
@@ -401,6 +406,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		private void BuildConsistentTangentialConstitutiveMatrix(double value1)
 		{
 			this.constitutiveMatrix = Matrix.CreateZero(TotalStresses, TotalStrains);
+			this.constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
 			double invariantJ2New = this.GetDeviatorSecondStressInvariant(stressesNew);
 
 			double value2 = (3 * this.shearModulus * this.shearModulus) /

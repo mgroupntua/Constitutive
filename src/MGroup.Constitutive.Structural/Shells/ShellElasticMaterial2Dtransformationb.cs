@@ -172,8 +172,14 @@ namespace MGroup.Constitutive.Structural.Shells
 		{
 			get
 			{
-				if (CartesianConstitutiveMatrix == null) UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
-				return Matrix.CreateFromArray(CartesianConstitutiveMatrix);
+				if (CartesianConstitutiveMatrix == null)
+				{
+					UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
+				}
+
+				var m = Matrix.CreateFromArray(CartesianConstitutiveMatrix);
+				m.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				return m;
 			}
 		}
 

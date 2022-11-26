@@ -1,4 +1,3 @@
-
 using System;
 using System.Linq;
 using System.IO;
@@ -7,10 +6,9 @@ using MGroup.LinearAlgebra;
 using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
+
 namespace MGroup.Constitutive.Structural.Continuum
 {
-
-
 	public class DruckerPrager3DNonLinearHardening : IIsotropicContinuumMaterial3D
 	{
 		private const string PLASTIC_STRAIN = "Plastic strain";
@@ -159,6 +157,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			var value1 = this.youngModulus / ((1 + this.poissonRatio) * (1 - 2 * this.poissonRatio));
 			var lamda = this.poissonRatio * value1;
 			this.elasticConstitutiveMatrix = Matrix.CreateZero(6, 6);
+			this.elasticConstitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
 			this.elasticConstitutiveMatrix[0, 0] = value1 * (1 - this.poissonRatio);
 			this.elasticConstitutiveMatrix[0, 1] = lamda;
 			this.elasticConstitutiveMatrix[0, 2] = lamda;
@@ -180,7 +179,12 @@ namespace MGroup.Constitutive.Structural.Continuum
 		{
 			get
 			{
-				if (this.constitutiveMatrix == null) UpdateMaterial(new double[6]);
+				if (this.constitutiveMatrix == null)
+				{
+					UpdateMaterial(new double[6]);
+					this.constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				}
+
 				return constitutiveMatrix;
 			}
 		}
@@ -354,6 +358,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			Matrix temp1 = PrincipalStressConstitutiveMatrix.MultiplyLeft(Rotation);
 			Matrix final = temp1.MultiplyRight(Rotation.Transpose());
 			Matrix check = final - final.Transpose();
+			final.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
 			return final;
 		}
 		private Matrix BuildConsistentTangentialConstitutiveMatrix()
@@ -392,6 +397,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			IdentityTensorIdentity.ScaleIntoThis(bulk * (-bulk * this.ni * this.nipaula * A));
 			Matrix final = this.elasticConstitutiveMatrix + temp1 + temp2 + temp3 + temp4 + IdentityTensorIdentity;
 			Matrix test = final - final.Transpose();
+			final.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
 			return final;
 		}
 		public void CalculateNextStressStrainPoint(double[] de, double[] Stresses, IMatrixView ConstitutiveMatrix)
@@ -505,12 +511,14 @@ namespace MGroup.Constitutive.Structural.Continuum
 
 			return stressDeviator;
 		}
+
 		public double compf(double J2, double p, double plasticstrain)
 		{
 			cohesion = GetYieldBackStressFromPlasticStrain(plasticstrain, this.IsotropicHardeningCurve);
 			double fval = Math.Sqrt(J2) + this.ni * p - this.ksi * cohesion;
 			return fval;
 		}
+
 		public double[] ReturnMapping(double[] Stresses, double[] StressesTrial)
 		{
 			Stresses = ReturntoSmoothPortion(Stresses, Stressestrial);

@@ -52,7 +52,12 @@ namespace MGroup.Constitutive.Structural.Planar
 		{
 			get
 			{
-				if (constitutiveMatrix == null) UpdateConstitutiveMatrixAndEvaluateResponse(new double[3]);
+				if (constitutiveMatrix == null)
+				{
+					UpdateConstitutiveMatrixAndEvaluateResponse(new double[3]);
+					constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				}
+
 				return constitutiveMatrix;
 			}
 		}
@@ -118,6 +123,7 @@ namespace MGroup.Constitutive.Structural.Planar
 		{
 			this.strains.CopyFrom(strains);
 			constitutiveMatrix = Matrix.CreateZero(3, 3); //TODO: This should be cached in the constitutive matrix property and used here.
+			constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
 			if (StressState == StressState2D.PlaneStress)
 			{
 				double aux = YoungModulus / (1 - PoissonRatio * PoissonRatio);

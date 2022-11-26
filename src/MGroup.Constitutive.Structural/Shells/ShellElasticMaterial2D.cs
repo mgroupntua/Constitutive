@@ -80,6 +80,7 @@ namespace MGroup.Constitutive.Structural.Shells
 				},
 			});
 			constitutiveMatrix.ScaleIntoThis(YoungModulus/(1-Math.Pow(PoissonRatio,2)));
+			constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
 			CartesianConstitutiveMatrix = constitutiveMatrix;
 		}
 
@@ -97,7 +98,12 @@ namespace MGroup.Constitutive.Structural.Shells
 		{
 			get
 			{
-				if (CartesianConstitutiveMatrix == null) UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
+				if (CartesianConstitutiveMatrix == null)
+				{
+					UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
+					CartesianConstitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				}
+
 				return CartesianConstitutiveMatrix;
 			}
 		}

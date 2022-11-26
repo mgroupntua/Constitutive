@@ -87,6 +87,7 @@ namespace MGroup.Constitutive.Structural.Cohesive
 		public void InitializeMatrices()
 		{
 			D_tan = Matrix.CreateZero(3, 3);
+			D_tan.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
 			D_tan_prev = new double[3, 3];
 			T_int = new double[3];
 			D_tan_f = new double[3, 3];
@@ -240,7 +241,12 @@ namespace MGroup.Constitutive.Structural.Cohesive
 		{
 			get
 			{
-				if (D_tan == null) UpdateConstitutiveMatrixAndEvaluateResponse(new double[3]);
+				if (D_tan == null)
+				{
+					UpdateConstitutiveMatrixAndEvaluateResponse(new double[3]);
+					D_tan.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				}
+
 				return D_tan;
 			}
 		}

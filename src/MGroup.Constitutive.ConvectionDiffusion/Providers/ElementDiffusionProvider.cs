@@ -6,9 +6,16 @@ namespace MGroup.Constitutive.ConvectionDiffusion.Providers
 {
 	public class ElementDiffusionProvider : IElementMatrixProvider
 	{
+		private static Matrix GetSymmetricZero(int count)
+		{
+			var m = LinearAlgebra.Matrices.Matrix.CreateZero(count, count);
+			m.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			return m;
+		}
+
 		public IMatrix Matrix(IElementType element) =>
 			element is IConvectionDiffusionElementType ?
 				((IConvectionDiffusionElementType)element).DiffusionMatrix() :
-				LinearAlgebra.Matrices.Matrix.CreateZero(element.GetElementDofTypes().Count, element.GetElementDofTypes().Count);
+				GetSymmetricZero(element.GetElementDofTypes().Count);
 	}
 }

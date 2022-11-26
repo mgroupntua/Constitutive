@@ -4,6 +4,7 @@ using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
 
+// CONSTITUTIVE MATRIX IS ASSUMED TO BE SYMMETRIC - PLEASE CHECK
 namespace MGroup.Constitutive.Structural.Continuum
 {
 	/// <summary>
@@ -37,7 +38,12 @@ namespace MGroup.Constitutive.Structural.Continuum
 		{
 			get
 			{
-				if (constitutiveMatrix == null) UpdateConstitutiveMatrixAndEvaluateResponse(new double[9] { 1, 1, 1, 0, 0, 0, 0, 0, 0 });
+				if (constitutiveMatrix == null)
+				{
+					UpdateConstitutiveMatrixAndEvaluateResponse(new double[9] { 1, 1, 1, 0, 0, 0, 0, 0, 0 });
+					constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				}
+
 				return constitutiveMatrix;
 			}
 		}
@@ -97,7 +103,8 @@ namespace MGroup.Constitutive.Structural.Continuum
 			}
 
 			stresses = Spk_vec.Copy();
-			constitutiveMatrix =Matrix.CreateFromArray(Cons);
+			constitutiveMatrix = Matrix.CreateFromArray(Cons);
+			constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
 			return stresses;
 		}
 		#endregion

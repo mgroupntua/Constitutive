@@ -10,6 +10,6 @@ namespace MGroup.Constitutive.ConvectionDiffusion.Providers
 			element is IConvectionDiffusionElementType ?
 				((IConvectionDiffusionElementType)element).ProductionVector() :
 				new double[element.GetElementDofTypes().Count];
-		public IMatrix Matrix(IElementType element) => throw new System.NotImplementedException();
+		//public IMatrix Matrix(IElementType element) => throw new System.NotImplementedException();
 	}
 }

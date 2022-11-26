@@ -91,8 +91,14 @@ namespace MGroup.Constitutive.Structural.Continuum
 		{
 			get
 			{
-				if (constitutiveMatrix == null) UpdateConstitutiveMatrixAndEvaluateResponse(new double[9]);
-				return Matrix.CreateFromArray(constitutiveMatrix);
+				if (constitutiveMatrix == null)
+				{
+					UpdateConstitutiveMatrixAndEvaluateResponse(new double[9]);
+				}
+
+				var c = Matrix.CreateFromArray(constitutiveMatrix);
+				c.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				return c;
 			}
 		}
 

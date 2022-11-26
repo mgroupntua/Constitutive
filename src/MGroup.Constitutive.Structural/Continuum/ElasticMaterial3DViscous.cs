@@ -544,7 +544,12 @@ namespace MGroup.Constitutive.Structural.Continuum
 		{
 			get
 			{
-				if (this.constitutiveMatrix == null) UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
+				if (this.constitutiveMatrix == null)
+				{
+					UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
+					constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				}
+
 				return constitutiveMatrix;
 			}
 		}

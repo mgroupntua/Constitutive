@@ -5,10 +5,10 @@ using MGroup.LinearAlgebra.Matrices;
 using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
+
+// CONSTITUTIVE MATRIX IS ASSUMED TO BE SYMMETRIC - PLEASE CHECK
 namespace MGroup.Constitutive.Structural.Continuum
 {
-
-
 	public class MohrCoulomb3DNonLinearHardening : IIsotropicContinuumMaterial3D
 	{
 		private const string PLASTIC_STRAIN = "Plastic strain";
@@ -88,7 +88,12 @@ namespace MGroup.Constitutive.Structural.Continuum
 		{
 			get
 			{
-				if (this.constitutiveMatrix == null) UpdateMaterial(new double[6]);
+				if (this.constitutiveMatrix == null)
+				{
+					UpdateMaterial(new double[6]);
+					constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				}
+
 				return constitutiveMatrix;
 			}
 		}

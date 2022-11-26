@@ -163,6 +163,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		public TsaiHill(double[] youngModuli, double[] poissonRatioi, double[] sigmas)
 		{
 			ElConstMatr = Matrix.CreateFromArray(new double[6, 6]);
+			ElConstMatr.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
 			var dee1 = youngModuli[0];
 			var dee2 = youngModuli[1];
 			var dee3 = youngModuli[2];

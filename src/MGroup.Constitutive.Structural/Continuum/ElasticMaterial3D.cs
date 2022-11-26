@@ -1,5 +1,6 @@
 using System;
 using MGroup.LinearAlgebra.Matrices;
+using MGroup.LinearAlgebra.Providers;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
 
@@ -49,6 +50,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			double fE3 = fE1 + fE2;
 			double fE4 = fE1 * 0.5;
 			var afE = Matrix.CreateZero(6, 6);
+			afE.MatrixSymmetry = MatrixSymmetry.Symmetric;
 			afE[0, 0] = fE3;
 			afE[0, 1] = fE2;
 			afE[0, 2] = fE2;

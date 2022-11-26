@@ -12,6 +12,7 @@ using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
 
+// CONSTITUTIVE MATRIX IS ASSUMED TO BE SYMMETRIC - PLEASE CHECK
 //TODO: Use the Matrix and Vector operations instead of implementing them again for double[,] and double[] here
 namespace MGroup.Constitutive.Structural.Continuum
 {
@@ -159,7 +160,15 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// <summary>
 		/// Returns the constitutive matrix of the material for the current strain state
 		/// </summary>
-		public IMatrixView ConstitutiveMatrix => Matrix.CreateFromArray(constitutiveMatrix); //TODO: this copies stuff and is not efficient.
+		public IMatrixView ConstitutiveMatrix
+		{
+			get
+			{
+				var m = Matrix.CreateFromArray(constitutiveMatrix);
+				m.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				return m;
+			}
+		}
 
 		/// <summary>
 		/// Updates the material state for a given new strain point.

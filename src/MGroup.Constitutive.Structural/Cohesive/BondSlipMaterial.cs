@@ -317,7 +317,9 @@ namespace MGroup.Constitutive.Structural.Cohesive
 			get
 			{
 
-				return  Matrix.CreateFromArray(ConstitutiveMatrix3D);
+				var c = Matrix.CreateFromArray(ConstitutiveMatrix3D);
+				c.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				return c;
 			}
 		}
 
