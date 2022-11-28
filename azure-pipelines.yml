@@ -95,8 +95,32 @@ steps:
   displayName: Clone FEM in Integration Tests
   inputs:
     targetType: inline
-    script: dir ; cd D:\a\1\s\integrationTests ; git clone https://github.com/mgroupntua/FEM.git;
+    script: cd integrationTests ; git clone https://github.com/mgroupntua/FEM.git ; dir ;
     pwsh: true
+
+- script: dotnet remove D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Structural\MGroup.FEM.Structural.csproj package MGroup.Constitutive.Structural
+  displayName: Remove Package Constitutive.Structural from FEM.Structural
+
+- script: dotnet add D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Structural\MGroup.FEM.Structural.csproj reference D:\a\1\s\integrationTests\Constitutive\src\MGroup.Constitutive.Structural\MGroup.Constitutive.Structural.csproj
+  displayName: Add project ref Constitutive.Structural to FEM.Structural
+
+- script: dotnet remove D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Thermal\MGroup.FEM.Thermal.csproj package MGroup.Constitutive.Thermal
+  displayName: Remove Package Constitutive.Thermal from FEM.Thermal
+
+- script: dotnet add D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Thermal\MGroup.FEM.Thermal.csproj reference D:\a\1\s\integrationTests\Constitutive\src\MGroup.Constitutive.Thermal\MGroup.Constitutive.Thermal.csproj
+  displayName: Add project ref Constitutive.Thermal to FEM.Thermal
+
+- script: dotnet remove D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Structural.Tests\MGroup.FEM.Structural.Tests.csproj package MGroup.FEM.Structural
+  displayName: Remove Package FEM.Structural from MSolve.Tests
+
+- script: dotnet add D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Structural.Tests\MGroup.FEM.Structural.Tests.csproj reference D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Structural\MGroup.FEM.Structural.csproj
+  displayName: Add project ref FEM.Structural to MSolve.Tests
+
+- script: dotnet remove D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Thermal.Tests\MGroup.FEM.Thermal.Tests.csproj package MGroup.FEM.Thermal
+  displayName: Remove Package FEM.Thermal from MSolve.Tests
+
+- script: dotnet add D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Thermal.Tests\MGroup.FEM.Thermal.Tests.csproj reference D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Thermal\MGroup.FEM.Thermal.csproj
+  displayName: Add project ref FEM.Thermal to MSolve.Tests
 
 - task: DotNetCoreCLI@2
   enabled: true
