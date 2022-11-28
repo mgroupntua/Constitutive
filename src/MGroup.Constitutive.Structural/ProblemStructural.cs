@@ -29,6 +29,7 @@ namespace MGroup.Constitutive.Structural
 		private ElementStructuralMassProvider massProvider = new ElementStructuralMassProvider();
 		private ElementStructuralDampingProvider dampingProvider = new ElementStructuralDampingProvider();
 		private readonly IElementMatrixPredicate rebuildStiffnessPredicate = new MaterialModifiedElementMarixPredicate();
+		private double time;
 
 		public ProblemStructural(IModel model, IAlgebraicModel algebraicModel, ISolver solver)
 		{
@@ -282,6 +283,7 @@ namespace MGroup.Constitutive.Structural
 
 		public IGlobalVector GetRhs(double time)
 		{
+			this.time = time;
 			solver.LinearSystem.RhsVector.Clear(); //TODO: this is also done by model.AssignLoads()
 			AssignRhs();
 			algebraicModel.AddToGlobalVector(EnumerateEquivalentNeumannBoundaryConditions, solver.LinearSystem.RhsVector);
@@ -361,6 +363,27 @@ namespace MGroup.Constitutive.Structural
 						.OfType<INodalDisplacementBoundaryCondition>()
 						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false),
 				solver.LinearSystem.RhsVector);
+
+			algebraicModel.AddToGlobalVector(id =>
+			{
+				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
+				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
+				{
+					boundaryCondition.CurrentTime = time;
+				}
+
+				return boundaryConditions
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalLoadBoundaryCondition>()
+					.Where(x => model.EnumerateBoundaryConditions(id)
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+						.OfType<INodalDisplacementBoundaryCondition>()
+						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
+			},
+				solver.LinearSystem.RhsVector);
+
+			
+
 		}
 
 		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering() =>
