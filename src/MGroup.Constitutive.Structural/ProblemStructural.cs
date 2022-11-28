@@ -287,13 +287,13 @@ namespace MGroup.Constitutive.Structural
 
 			algebraicModel.AddToGlobalVector(id =>
 			{
-				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
-				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
+				var transientBCs = model.EnumerateBoundaryConditions(id).OfType<ITransientBoundaryConditionSet<IStructuralDofType>>().ToArray();
+				foreach (var boundaryCondition in transientBCs)
 				{
 					boundaryCondition.CurrentTime = time;
 				}
 
-				return boundaryConditions
+				return transientBCs
 					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
 					.OfType<INodalLoadBoundaryCondition>()
 					.Where(x => model.EnumerateBoundaryConditions(id)

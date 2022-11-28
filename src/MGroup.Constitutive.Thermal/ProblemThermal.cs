@@ -190,8 +190,27 @@ namespace MGroup.Constitutive.Thermal
 		{
 			solver.LinearSystem.RhsVector.Clear(); //TODO: this is also done by model.AssignLoads()
 			AssignRhs();
-			IGlobalVector result = solver.LinearSystem.RhsVector.Copy();
 
+			algebraicModel.AddToGlobalVector(id =>
+			{
+				var transientBCs = model.EnumerateBoundaryConditions(id).OfType<ITransientBoundaryConditionSet<IThermalDofType>>().ToArray();
+				foreach (var boundaryCondition in transientBCs)
+				{
+					boundaryCondition.CurrentTime = time;
+				}
+
+				return transientBCs
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalHeatFluxBoundaryCondition>()
+					.Where(x => model.EnumerateBoundaryConditions(id)
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+						.OfType<INodalTemperatureBoundaryCondition>()
+						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
+			},
+				solver.LinearSystem.RhsVector);
+			algebraicModel.AddToGlobalVector(EnumerateEquivalentNeumannBoundaryConditions, solver.LinearSystem.RhsVector);
+
+			IGlobalVector result = solver.LinearSystem.RhsVector.Copy();
 			return result;
 		}
 

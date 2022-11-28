@@ -213,8 +213,27 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		{
 			solver.LinearSystem.RhsVector.Clear();
 			AssignRhs();
-			IGlobalVector result = solver.LinearSystem.RhsVector.Copy();
 
+			algebraicModel.AddToGlobalVector(id =>
+			{
+				var transientBCs = model.EnumerateBoundaryConditions(id).OfType<ITransientBoundaryConditionSet<IConvectionDiffusionDofType>>().ToArray();
+				foreach (var boundaryCondition in transientBCs)
+				{
+					boundaryCondition.CurrentTime = time;
+				}
+
+				return transientBCs
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalUnknownVariableFluxBoundaryCondition>()
+					.Where(x => model.EnumerateBoundaryConditions(id)
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+						.OfType<INodalUnknownVariableBoundaryCondition>()
+						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
+			},
+				solver.LinearSystem.RhsVector);
+			algebraicModel.AddToGlobalVector(EnumerateEquivalentNeumannBoundaryConditions, solver.LinearSystem.RhsVector); 
+			
+			IGlobalVector result = solver.LinearSystem.RhsVector.Copy();
 			return result;
 		}
 
