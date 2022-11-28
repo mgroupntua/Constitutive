@@ -284,6 +284,24 @@ namespace MGroup.Constitutive.Structural
 		{
 			solver.LinearSystem.RhsVector.Clear(); //TODO: this is also done by model.AssignLoads()
 			AssignRhs();
+
+			algebraicModel.AddToGlobalVector(id =>
+			{
+				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
+				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
+				{
+					boundaryCondition.CurrentTime = time;
+				}
+
+				return boundaryConditions
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalLoadBoundaryCondition>()
+					.Where(x => model.EnumerateBoundaryConditions(id)
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+						.OfType<INodalDisplacementBoundaryCondition>()
+						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
+			},
+				solver.LinearSystem.RhsVector);
 			algebraicModel.AddToGlobalVector(EnumerateEquivalentNeumannBoundaryConditions, solver.LinearSystem.RhsVector);
 
 			return solver.LinearSystem.RhsVector.Copy();
