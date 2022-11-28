@@ -231,7 +231,6 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
 			},
 				solver.LinearSystem.RhsVector);
-			algebraicModel.AddToGlobalVector(EnumerateEquivalentNeumannBoundaryConditions, solver.LinearSystem.RhsVector); 
 			
 			IGlobalVector result = solver.LinearSystem.RhsVector.Copy();
 			return result;
