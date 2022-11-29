@@ -1,40 +1,32 @@
 using System.Collections.Generic;
-using MGroup.Constitutive.Structural.Providers;
-using MGroup.MSolve.AnalysisWorkflow;
-using MGroup.MSolve.AnalysisWorkflow.Providers;
-using MGroup.MSolve.Discretization;
-using MGroup.MSolve.Discretization.Dofs;
-using MGroup.MSolve.Discretization.Entities;
-using MGroup.MSolve.Discretization.BoundaryConditions;
-using MGroup.MSolve.Solution;
-using MGroup.MSolve.Solution.LinearSystem;
-using MGroup.MSolve.Solution.AlgebraicModel;
 using System.Linq;
 using MGroup.Constitutive.Structural.BoundaryConditions;
-using MGroup.MSolve.AnalysisWorkflow.Transient;
+using MGroup.Constitutive.Structural.Providers;
 using MGroup.Constitutive.Structural.InitialConditions;
+using MGroup.MSolve.AnalysisWorkflow.Providers;
+using MGroup.MSolve.AnalysisWorkflow.Transient;
+using MGroup.MSolve.Discretization.BoundaryConditions;
+using MGroup.MSolve.Discretization.Dofs;
+using MGroup.MSolve.Discretization.Entities;
+using MGroup.MSolve.Solution.AlgebraicModel;
+using MGroup.MSolve.Solution.LinearSystem;
 
-//TODO: Usually the LinearSystem is passed in, but for GetRHSFromHistoryLoad() it is stored as a field. Decide on one method.
-//TODO: Right now this class decides when to build or rebuild the matrices. The analyzer should decide that.
 namespace MGroup.Constitutive.Structural
 {
 	public class ProblemStructural : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
-		private bool shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct = false;
-		private IGlobalMatrix mass, damping, stiffness;
 		private readonly IModel model;
 		private readonly IAlgebraicModel algebraicModel;
-		private readonly ISolver solver;
-		private ElementStructuralStiffnessProvider stiffnessProvider = new ElementStructuralStiffnessProvider();
-		private ElementStructuralMassProvider massProvider = new ElementStructuralMassProvider();
-		private ElementStructuralDampingProvider dampingProvider = new ElementStructuralDampingProvider();
+		private readonly ElementStructuralStiffnessProvider stiffnessProvider = new ElementStructuralStiffnessProvider();
+		private readonly ElementStructuralMassProvider massProvider = new ElementStructuralMassProvider();
+		private readonly ElementStructuralDampingProvider dampingProvider = new ElementStructuralDampingProvider();
 		private readonly IElementMatrixPredicate rebuildStiffnessPredicate = new MaterialModifiedElementMarixPredicate();
+		private IGlobalMatrix mass, damping, stiffness;
 
-		public ProblemStructural(IModel model, IAlgebraicModel algebraicModel, ISolver solver)
+		public ProblemStructural(IModel model, IAlgebraicModel algebraicModel)
 		{
 			this.model = model;
 			this.algebraicModel = algebraicModel;
-			this.solver = solver;
 			this.algebraicModel.BoundaryConditionsInterpreter = this;
 
 			ActiveDofs.AddDof(StructuralDof.TranslationX);
@@ -79,6 +71,8 @@ namespace MGroup.Constitutive.Structural
 
 		public ActiveDofs ActiveDofs { get; } = new ActiveDofs();
 
+		public DifferentiationOrder ProblemOrder => DifferentiationOrder.Second;
+
 		private void BuildStiffness() => stiffness = algebraicModel.BuildGlobalMatrix(stiffnessProvider);
 
 		private void RebuildStiffness()
@@ -102,14 +96,6 @@ namespace MGroup.Constitutive.Structural
 		//      instead of building and assembling element k, m matrices.
 		private void BuildDamping() => damping = algebraicModel.BuildGlobalMatrix(dampingProvider);
 
-		#region IAnalyzerProvider Members
-		public void ClearMatrices()
-		{
-			damping = null;
-			stiffness = null;
-			mass = null;
-		}
-
 		public void Reset()
 		{
 			// TODO: Check if we should clear material state - (goat) removed that, seemed erroneous
@@ -122,60 +108,13 @@ namespace MGroup.Constitutive.Structural
 			mass = null;
 		}
 
-		public void GetProblemDofTypes()
+		public IGlobalMatrix GetMatrix(DifferentiationOrder differentiationOrder) => differentiationOrder switch
 		{
-			//model.AllDofs.AddDof(StructuralDof.TranslationX);
-			//model.AllDofs.AddDof(StructuralDof.TranslationY);
-			//model.AllDofs.AddDof(StructuralDof.TranslationZ);
-			//model.AllDofs.AddDof(StructuralDof.RotationX);
-			//model.AllDofs.AddDof(StructuralDof.RotationY);
-			//model.AllDofs.AddDof(StructuralDof.RotationZ);
-		}
-		#endregion
-
-		#region IImplicitIntegrationProvider Members
-
-		public void LinearCombinationOfMatricesIntoEffectiveMatrix(TransientAnalysisCoefficients coefficients)
-		{
-			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
-			IGlobalMatrix matrix = Stiffness;
-			if (coefficients[DifferentiationOrder.Second] != 0)
-			{
-				matrix.LinearCombinationIntoThis(coefficients[DifferentiationOrder.Zero], Mass, coefficients[DifferentiationOrder.Second]);
-				if (coefficients[DifferentiationOrder.First] != 0)
-				{
-					matrix.AxpyIntoThis(Damping, coefficients[DifferentiationOrder.First]);
-				}
-			}
-			else
-			{
-				if (coefficients[DifferentiationOrder.First] != 0)
-				{
-					matrix.LinearCombinationIntoThis(coefficients[DifferentiationOrder.Zero], Damping, coefficients[DifferentiationOrder.First]);
-				}
-				else
-				{
-					matrix.ScaleIntoThis(coefficients[DifferentiationOrder.Zero]);
-				}
-			}
-
-			solver.LinearSystem.Matrix = matrix;
-			shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct = true;
-		}
-
-		public void LinearCombinationOfMatricesIntoEffectiveMatrixNoOverwrite(TransientAnalysisCoefficients coefficients)
-		{
-			//TODO: when the matrix is mutated, the solver must be informed via observers (or just flags).
-			IGlobalMatrix matrix = Stiffness.Copy();
-			matrix.LinearCombinationIntoThis(coefficients[DifferentiationOrder.Zero], Mass, coefficients[DifferentiationOrder.Second]);
-			matrix.AxpyIntoThis(Damping, coefficients[DifferentiationOrder.First]);
-			solver.LinearSystem.Matrix = matrix;
-		}
-
-		public void ProcessRhs(TransientAnalysisCoefficients coefficients, IGlobalVector rhs)
-		{
-			// Method intentionally left empty.
-		}
+			DifferentiationOrder.Zero => Stiffness,
+			DifferentiationOrder.First => Damping,
+			DifferentiationOrder.Second => Mass,
+			_ => algebraicModel.CreateEmptyMatrix(),
+		};
 
 		private IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
@@ -282,8 +221,16 @@ namespace MGroup.Constitutive.Structural
 
 		public IGlobalVector GetRhs(double time)
 		{
-			solver.LinearSystem.RhsVector.Clear(); //TODO: this is also done by model.AssignLoads()
-			AssignRhs();
+			IGlobalVector rhs = algebraicModel.CreateZeroVector();
+			algebraicModel.AddToGlobalVector(id =>
+				model.EnumerateBoundaryConditions(id)
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.OfType<INodalLoadBoundaryCondition>()
+					.Where(x => model.EnumerateBoundaryConditions(id)
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+						.OfType<INodalDisplacementBoundaryCondition>()
+						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false),
+				rhs);
 
 			algebraicModel.AddToGlobalVector(id =>
 			{
@@ -301,46 +248,11 @@ namespace MGroup.Constitutive.Structural
 						.OfType<INodalDisplacementBoundaryCondition>()
 						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
 			},
-				solver.LinearSystem.RhsVector);
-			algebraicModel.AddToGlobalVector(EnumerateEquivalentNeumannBoundaryConditions, solver.LinearSystem.RhsVector);
+				rhs);
+			//algebraicModel.AddToGlobalVector(EnumerateEquivalentNeumannBoundaryConditions, rhs);
 
-			return solver.LinearSystem.RhsVector.Copy();
+			return rhs;
 		}
-
-		private IGlobalVector SecondOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
-		{
-			IGlobalVector result = algebraicModel.CreateZeroVector();
-			Mass.MultiplyVector(vector, result);
-			return result;
-		}
-		//
-		private IGlobalVector FirstOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
-		{
-			IGlobalVector result = algebraicModel.CreateZeroVector();
-			Damping.MultiplyVector(vector, result);
-			return result;
-		}
-
-		private IGlobalVector ZeroOrderDerivativeMatrixVectorProduct(IGlobalVector vector)
-		{
-			if (shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct)
-			{
-				BuildStiffness();
-				shouldRebuildStiffnessMatrixForZeroOrderDerivativeMatrixVectorProduct = false;
-			}
-
-			IGlobalVector result = algebraicModel.CreateZeroVector();
-			Stiffness.MultiplyVector(vector, result);
-			return result;
-		}
-
-		public IGlobalVector MatrixVectorProduct(DifferentiationOrder differentiationOrder, IGlobalVector vector) => differentiationOrder switch
-		{
-			DifferentiationOrder.Zero => ZeroOrderDerivativeMatrixVectorProduct(vector),
-			DifferentiationOrder.First => FirstOrderDerivativeMatrixVectorProduct(vector),
-			DifferentiationOrder.Second => SecondOrderDerivativeMatrixVectorProduct(vector),
-			_ => algebraicModel.CreateZeroVector(),
-		};
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
 			model.EnumerateBoundaryConditions(subdomainID)
@@ -351,34 +263,11 @@ namespace MGroup.Constitutive.Structural
 					.OfType<INodalDisplacementBoundaryCondition>()
 					.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
 
-		#endregion
-
-		#region IStaticProvider Members
-		public void CalculateMatrix()
-		{
-			if (stiffness == null) BuildStiffness();
-			solver.LinearSystem.Matrix = stiffness;
-		}
-		#endregion
-
-		#region INonLinearProvider Members
 		public double CalculateRhsNorm(IGlobalVector rhs) => rhs.Norm2();
 
-		public void ProcessInternalRhs(IGlobalVector solution, IGlobalVector rhs) { }
-		#endregion
-
-		public void AssignRhs()
+		public void ProcessInternalRhs(IGlobalVector solution, IGlobalVector rhs) 
 		{
-			solver.LinearSystem.RhsVector.Clear();
-			algebraicModel.AddToGlobalVector(id =>
-				model.EnumerateBoundaryConditions(id)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-					.OfType<INodalLoadBoundaryCondition>()
-					.Where(x => model.EnumerateBoundaryConditions(id)
-						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-						.OfType<INodalDisplacementBoundaryCondition>()
-						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false),
-				solver.LinearSystem.RhsVector);
+			// Method intentionally left blank
 		}
 
 		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering() =>
@@ -397,5 +286,9 @@ namespace MGroup.Constitutive.Structural
 				.GroupBy(x => (x.Node.ID, x.DOF))
 				.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
 				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
+
+		public IGlobalVector GetRhs() => GetRhs(0);
+
+		public IGlobalMatrix GetMatrix() => GetMatrix(DifferentiationOrder.Zero);
 	}
 }
