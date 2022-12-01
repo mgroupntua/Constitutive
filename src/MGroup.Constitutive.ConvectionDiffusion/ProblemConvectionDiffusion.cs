@@ -10,6 +10,8 @@ using MGroup.MSolve.Discretization.Dofs;
 using MGroup.MSolve.Discretization.Entities;
 using MGroup.MSolve.Solution.AlgebraicModel;
 using MGroup.MSolve.Solution.LinearSystem;
+using MGroup.MSolve.DataStructures;
+using System;
 
 namespace MGroup.Constitutive.ConvectionDiffusion
 {
@@ -24,6 +26,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		private readonly ElementCapacityMatrixProvider fistTimeDerivativeMatrixProvider = new ElementCapacityMatrixProvider();
 		private readonly IElementMatrixPredicate rebuildDiffusionPredicate = new MaterialModifiedElementMarixPredicate();
 		private IGlobalMatrix convection, diffusion, production, capacityMatrix;
+		private TransientAnalysisPhase analysisPhase = TransientAnalysisPhase.SteadyStateSolution;
 
 		public ProblemConvectionDiffusion(IModel model, IAlgebraicModel algebraicModel)
 		{
@@ -73,6 +76,8 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		public ActiveDofs ActiveDofs { get; } = new ActiveDofs();
 
 		public DifferentiationOrder ProblemOrder => DifferentiationOrder.First;
+
+		public void SetTransientAnalysisPhase(TransientAnalysisPhase phase) => analysisPhase = phase;
 
 		private void BuildConvection() => convection = algebraicModel.BuildGlobalMatrix(convectionProvider);
 
@@ -214,6 +219,16 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		public void ProcessInternalRhs(IGlobalVector solution, IGlobalVector rhs) 
 		{
 			// Method intentionally left blank
+		}
+
+		public IGlobalVector CalculateResponseIntegralVector(IGlobalVector solution)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void UpdateState(IHaveState externalState)
+		{
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>

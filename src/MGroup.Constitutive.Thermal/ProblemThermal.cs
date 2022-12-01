@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MGroup.Constitutive.Thermal.BoundaryConditions;
@@ -5,6 +6,7 @@ using MGroup.Constitutive.Thermal.InitialConditions;
 using MGroup.Constitutive.Thermal.Providers;
 using MGroup.MSolve.AnalysisWorkflow.Providers;
 using MGroup.MSolve.AnalysisWorkflow.Transient;
+using MGroup.MSolve.DataStructures;
 using MGroup.MSolve.Discretization.BoundaryConditions;
 using MGroup.MSolve.Discretization.Dofs;
 using MGroup.MSolve.Discretization.Entities;
@@ -22,6 +24,7 @@ namespace MGroup.Constitutive.Thermal
 		private readonly ElementCapacityProvider capacityProvider = new ElementCapacityProvider();
 		private readonly IElementMatrixPredicate rebuildConductivityPredicate = new MaterialModifiedElementMarixPredicate();
 		private IGlobalMatrix capacity, conductivity;
+		private TransientAnalysisPhase analysisPhase = TransientAnalysisPhase.SteadyStateSolution;
 
 		public ProblemThermal(IModel model, IAlgebraicModel algebraicModel)
 		{
@@ -52,6 +55,8 @@ namespace MGroup.Constitutive.Thermal
 		}
 
 		public ActiveDofs ActiveDofs { get; } = new ActiveDofs();
+
+		public void SetTransientAnalysisPhase(TransientAnalysisPhase phase) => analysisPhase = phase;
 
 		public DifferentiationOrder ProblemOrder => DifferentiationOrder.First;
 
@@ -177,6 +182,16 @@ namespace MGroup.Constitutive.Thermal
 		public void ProcessInternalRhs(IGlobalVector solution, IGlobalVector rhs) 
 		{
 			// Method intentionally left blank
+		}
+
+		public IGlobalVector CalculateResponseIntegralVector(IGlobalVector solution)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void UpdateState(IHaveState externalState)
+		{
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>

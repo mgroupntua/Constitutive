@@ -8,11 +8,12 @@
     <PackageProjectUrl>http://mgroup.ntua.gr/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mgroupntua/Constitutive</RepositoryUrl>
     <PackageIconUrl>https://github.com/mgroupntua/Constitutive/raw/develop/MGroupConstitutiveStructural.png</PackageIconUrl>
+    <UserSecretsId>1b6dd7a4-6efc-4a26-ab92-afd30eb965e6</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MGroup.LinearAlgebra" Version="0.1.0-unstable.77" />
-    <PackageReference Include="MGroup.MSolve.Core" Version="0.2.0-unstable.63" />
+    <PackageReference Include="MGroup.MSolve.Core" Version="0.2.0-unstable.65" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
