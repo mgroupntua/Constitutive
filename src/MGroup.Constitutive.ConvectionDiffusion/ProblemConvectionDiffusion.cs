@@ -253,7 +253,13 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		public void UpdateState(IHaveState externalState)
 		{
-			//throw new NotImplementedException();
+			if (analysisPhase != TransientAnalysisPhase.InitialConditionEvaluation)
+			{
+				algebraicModel.DoPerElement<IConvectionDiffusionElementType>(element =>
+				{
+					element.SaveConstitutiveLawState(externalState);
+				});
+			}
 		}
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
