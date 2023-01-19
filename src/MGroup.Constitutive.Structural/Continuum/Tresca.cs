@@ -158,7 +158,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			Stresses.CopyTo(stressesCopy, 0);
 			this.ConstitutiveMatrix = ConstitutiveMatrix;
 			//watch out if you use clone.
-			Tresca m = new Tresca(0.0, 0.0, 0.0)
+			Tresca m = new Tresca(this.YoungModulus,this.PoissonRatio, this.yieldstress)
 			{
 				modified = this.Modified,
 				plasticStrain = this.plasticStrain
