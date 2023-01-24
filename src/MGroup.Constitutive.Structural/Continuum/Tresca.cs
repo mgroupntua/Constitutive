@@ -92,13 +92,13 @@ namespace MGroup.Constitutive.Structural.Continuum
 		{
 			//this.plasticStrain = this.plasticStrainNew;
 			//Array.Copy(this.stressesNew, this.Stresses, 6);
-			for (int i = 0; i < 6; i++)
-				this.tempStresses[i] = this.Stresses[i];
+			//for (int i = 0; i < 6; i++)
+				//this.tempStresses[i] = this.Stresses[i];
 			this.plasticStrain = this.plasticStrainNew;
-			if (this.plasticStrain > 0)
-			{
-				this.yieldstress = GetYieldBackStressFromPlasticStrain(this.plasticStrain, this.IsotropicHardeningCurve);
-			}
+			//if (this.plasticStrain > 0)
+			//{
+				//this.yieldstress = GetYieldBackStressFromPlasticStrain(this.plasticStrain, this.IsotropicHardeningCurve);
+			//}
 		}
 
 		public void ResetModified()
@@ -108,7 +108,13 @@ namespace MGroup.Constitutive.Structural.Continuum
 		public GenericConstitutiveLawState CreateState()
 		{
 			this.plasticStrain = this.plasticStrainNew;
-			stresses.CopyFrom(stressesNew);
+	        for (int i = 0; i < 6; i++)
+		       this.tempStresses[i] = this.Stresses[i];
+		    stresses.CopyFrom(tempStresses);
+			if (this.plasticStrain > 0)
+			{
+				this.yieldstress = GetYieldBackStressFromPlasticStrain(this.plasticStrain, this.IsotropicHardeningCurve);
+			}
 			currentState = new GenericConstitutiveLawState(this, new[]
 			{
 				(PLASTIC_STRAIN, plasticStrain),
@@ -147,7 +153,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			incrementalStrains.CopyFrom(strainsIncrement);
 			this.UpdateMaterial(strainsIncrement);
 
-			return stressesNew;
+			return Stresses;
 		}
 
 		public object Clone()
