@@ -8,5 +8,6 @@ namespace MGroup.Constitutive.Structural
 		IMatrix StiffnessMatrix();
 		IMatrix MassMatrix();
 		IMatrix DampingMatrix();
+		double[] VolumeLoads();
 	}
 }

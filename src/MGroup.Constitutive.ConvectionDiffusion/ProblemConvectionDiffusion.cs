@@ -12,6 +12,7 @@ using MGroup.MSolve.Solution.AlgebraicModel;
 using MGroup.MSolve.Solution.LinearSystem;
 using MGroup.MSolve.DataStructures;
 using System;
+using MGroup.Constitutive.Structural.Providers;
 
 namespace MGroup.Constitutive.ConvectionDiffusion
 {
@@ -24,6 +25,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		private readonly ElementDiffusionProvider diffusionProvider = new ElementDiffusionProvider();
 		private readonly ElementConvectionProvider convectionProvider = new ElementConvectionProvider();
 		private readonly ElementCapacityMatrixProvider fistTimeDerivativeMatrixProvider = new ElementCapacityMatrixProvider();
+		private readonly ElementConvectionDiffusionInternalForcesProvider rhsProvider = new ElementConvectionDiffusionInternalForcesProvider();
 		private readonly IElementMatrixPredicate rebuildDiffusionPredicate = new MaterialModifiedElementMarixPredicate();
 		private IGlobalMatrix convection, diffusion, production, capacityMatrix;
 		private TransientAnalysisPhase analysisPhase = TransientAnalysisPhase.SteadyStateSolution;
@@ -221,14 +223,43 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			// Method intentionally left blank
 		}
 
+		
+
 		public IGlobalVector CalculateResponseIntegralVector(IGlobalVector solution)
 		{
-			throw new NotImplementedException();
+			IGlobalVector internalRhs = algebraicModel.CreateZeroVector();
+			if (analysisPhase != TransientAnalysisPhase.InitialConditionEvaluation)
+			{
+				var dirichletBoundaryConditions = algebraicModel.BoundaryConditionsInterpreter.GetDirichletBoundaryConditionsWithNumbering()
+				.Select(x => new NodalBoundaryCondition(x.Value.Node, x.Key.DOF, x.Value.Amount));
+				// First update the state of the elements
+				algebraicModel.DoPerElement<IConvectionDiffusionElementType>(element =>
+				{
+					double[] elementDisplacements = algebraicModel.ExtractElementVector(solution, element);
+					element.MapNodalBoundaryConditionsToElementVector(dirichletBoundaryConditions, elementDisplacements);
+					element.CalculateResponse(elementDisplacements);
+				});
+
+				// Then calculate the internal rhs vector
+				algebraicModel.AddToGlobalVector(internalRhs, rhsProvider);
+			}
+			else
+			{
+				CapacityMatrix.MultiplyVector(solution, internalRhs);
+			}
+
+			return internalRhs;
 		}
 
 		public void UpdateState(IHaveState externalState)
 		{
-			throw new NotImplementedException();
+			if (analysisPhase != TransientAnalysisPhase.InitialConditionEvaluation)
+			{
+				algebraicModel.DoPerElement<IConvectionDiffusionElementType>(element =>
+				{
+					element.SaveConstitutiveLawState(externalState);
+				});
+			}
 		}
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
