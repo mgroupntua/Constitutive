@@ -24,6 +24,7 @@ namespace MGroup.Constitutive.Structural
 		private readonly ElementStructuralMassProvider massProvider = new ElementStructuralMassProvider();
 		private readonly ElementStructuralDampingProvider dampingProvider = new ElementStructuralDampingProvider();
 		private readonly ElementStructuralInternalForcesProvider rhsProvider = new ElementStructuralInternalForcesProvider();
+		private readonly ElementStructuralVolumeLoadsProvider integratedLoadsVolumeProvider = new ElementStructuralVolumeLoadsProvider();
 		private readonly IElementMatrixPredicate rebuildStiffnessPredicate = new MaterialModifiedElementMarixPredicate();
 		private IGlobalMatrix mass, damping, stiffness;
 		private TransientAnalysisPhase analysisPhase = TransientAnalysisPhase.SteadyStateSolution;
@@ -229,6 +230,9 @@ namespace MGroup.Constitutive.Structural
 		public IGlobalVector GetRhs(double time)
 		{
 			IGlobalVector rhs = algebraicModel.CreateZeroVector();
+			algebraicModel.AddToGlobalVector(rhs, integratedLoadsVolumeProvider);
+
+
 			algebraicModel.AddToGlobalVector(id =>
 				model.EnumerateBoundaryConditions(id)
 					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
