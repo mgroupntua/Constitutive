@@ -44,7 +44,7 @@ namespace MGroup.Constitutive.Structural.BoundaryConditions
 			new StructuralBoundaryConditionSet(nodalDirichlet?.Where(x => x.Node.Subdomains.Contains(subdomain.ID)), 
 				nodalNeumann?.Where(x => x.Node.Subdomains.Contains(subdomain.ID)), domainDirichlet, domainNeumann);
 
-		public IEnumerable<INodalBoundaryCondition<IStructuralDofType>> EnumerateNodalBoundaryConditions() =>
+		public IEnumerable<INodalBoundaryCondition<IStructuralDofType>> EnumerateNodalBoundaryConditions(IEnumerable<IElementType> elements) =>
 			nodalDirichlet != null
 			? nodalDirichlet
 				.ToArray<INodalBoundaryCondition<IStructuralDofType>>()
@@ -52,13 +52,13 @@ namespace MGroup.Constitutive.Structural.BoundaryConditions
 				.ToArray()
 			: (nodalNeumann != null ? nodalNeumann.ToArray() : Enumerable.Empty<INodalBoundaryCondition<IStructuralDofType>>());
 
-		public IEnumerable<IDomainBoundaryCondition<IStructuralDofType>> EnumerateDomainBoundaryConditions() =>
-			domainDirichlet != null
-			? domainDirichlet
-				.ToArray<IDomainBoundaryCondition<IStructuralDofType>>()
-				.Concat(domainNeumann != null ? domainNeumann.ToArray<IDomainBoundaryCondition<IStructuralDofType>>() : Enumerable.Empty<IDomainBoundaryCondition<IStructuralDofType>>())
-				.ToArray()
-			: (domainNeumann != null ? domainNeumann.ToArray() : Enumerable.Empty<IDomainBoundaryCondition<IStructuralDofType>>());
+		//public IEnumerable<IDomainBoundaryCondition<IStructuralDofType>> EnumerateDomainBoundaryConditions() =>
+		//	domainDirichlet != null
+		//	? domainDirichlet
+		//		.ToArray<IDomainBoundaryCondition<IStructuralDofType>>()
+		//		.Concat(domainNeumann != null ? domainNeumann.ToArray<IDomainBoundaryCondition<IStructuralDofType>>() : Enumerable.Empty<IDomainBoundaryCondition<IStructuralDofType>>())
+		//		.ToArray()
+		//	: (domainNeumann != null ? domainNeumann.ToArray() : Enumerable.Empty<IDomainBoundaryCondition<IStructuralDofType>>());
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IStructuralDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements)
 		{

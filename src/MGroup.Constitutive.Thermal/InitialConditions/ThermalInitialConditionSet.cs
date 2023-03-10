@@ -22,14 +22,14 @@ namespace MGroup.Constitutive.Thermal.InitialConditions
 		public IInitialConditionSet<IThermalDofType> CreateInitialConditionSetOfSubdomain(ISubdomain subdomain) =>
 			new ThermalInitialConditionSet(nodalDirichlet?.Where(x => x.Node.Subdomains.Contains(subdomain.ID)), domainDirichlet);
 
-		public IEnumerable<INodalInitialCondition<IThermalDofType>> EnumerateNodalInitialConditions() =>
+		public IEnumerable<INodalInitialCondition<IThermalDofType>> EnumerateNodalInitialConditions(IEnumerable<IElementType> elements) =>
 			nodalDirichlet != null
 			? nodalDirichlet.ToArray<INodalInitialCondition<IThermalDofType>>()
 			: Enumerable.Empty<INodalInitialCondition<IThermalDofType>>();
 
-		public IEnumerable<IDomainInitialCondition<IThermalDofType>> EnumerateDomainInitialConditions() =>
-			domainDirichlet != null
-			? domainDirichlet.ToArray<IDomainInitialCondition<IThermalDofType>>()
-			: Enumerable.Empty<IDomainInitialCondition<IThermalDofType>>();
+		//public IEnumerable<IDomainInitialCondition<IThermalDofType>> EnumerateDomainInitialConditions() =>
+		//	domainDirichlet != null
+		//	? domainDirichlet.ToArray<IDomainInitialCondition<IThermalDofType>>()
+		//	: Enumerable.Empty<IDomainInitialCondition<IThermalDofType>>();
 	}
 }

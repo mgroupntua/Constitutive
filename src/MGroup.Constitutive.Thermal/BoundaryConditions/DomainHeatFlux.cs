@@ -1,23 +1,32 @@
+using MGroup.MSolve.DataStructures;
 using MGroup.MSolve.Discretization;
-using MGroup.MSolve.Discretization.Dofs;
-using MGroup.MSolve.Discretization.Entities;
 using MGroup.MSolve.Discretization.BoundaryConditions;
 
 namespace MGroup.Constitutive.Thermal.BoundaryConditions
 {
 	public class DomainHeatFlux : IDomainHeatFluxBoundaryCondition
 	{
+		private DomainFunction DomainFunction;
+
+		public double Amount(double[] coordinates) => DomainFunction(coordinates);
+
 		public IThermalDofType DOF { get; }
 
-		public double Amount { get; }
+		public double Multiplier { get; }
 
-		public DomainHeatFlux(IThermalDofType dof, double amount)
+		public DomainHeatFlux(IThermalDofType dof, double multiplier, DomainFunction domainFunction)
 		{
 			DOF = dof;
-			Amount = amount;
+			Multiplier = multiplier;
+			DomainFunction = domainFunction;
 		}
 
-		public IDomainBoundaryCondition<IThermalDofType> WithAmount(double amount) => new DomainHeatFlux(DOF, amount);
-		IDomainModelQuantity<IThermalDofType> IDomainModelQuantity<IThermalDofType>.WithAmount(double amount) => new DomainHeatFlux(DOF, amount);
+		public DomainHeatFlux(IThermalDofType dof, double multiplier)
+			: this(dof, multiplier, c => multiplier)
+		{
+		}
+
+		public IDomainBoundaryCondition<IThermalDofType> WithMultiplier(double multiplier) => new DomainHeatFlux(DOF, multiplier, DomainFunction);
+		IDomainModelQuantity<IThermalDofType> IDomainModelQuantity<IThermalDofType>.WithMultiplier(double multiplier) => new DomainHeatFlux(DOF, multiplier, DomainFunction);
 	}
 }

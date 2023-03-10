@@ -1,3 +1,5 @@
+#pragma warning disable SA1116 // Split parameters should start on line after declaration
+
 using System.Collections.Generic;
 using System.Linq;
 using MGroup.Constitutive.Structural.BoundaryConditions;
@@ -13,6 +15,8 @@ using MGroup.MSolve.Solution.LinearSystem;
 using MGroup.MSolve.DataStructures;
 using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.Providers;
+using System.Net.Sockets;
+using System;
 
 namespace MGroup.Constitutive.Structural
 {
@@ -141,14 +145,15 @@ namespace MGroup.Constitutive.Structural
 				}
 
 				return boundaryConditions
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
 					.OfType<INodalAccelerationBoundaryCondition>();
 			},
 				accelerations);
-			algebraicModel.AddToGlobalVector(boundaryConditions
-					.SelectMany(x => x.EnumerateDomainBoundaryConditions())
-					.OfType<IDomainAccelerationBoundaryCondition>(),
-				accelerations);
+
+			//algebraicModel.AddToGlobalVector(boundaryConditions
+			//		.SelectMany(x => x.EnumerateDomainBoundaryConditions())
+			//		.OfType<IDomainAccelerationBoundaryCondition>(),
+			//	accelerations);
 
 			return accelerations;
 		}
@@ -171,14 +176,15 @@ namespace MGroup.Constitutive.Structural
 				}
 
 				return boundaryConditions
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
 					.OfType<INodalVelocityBoundaryCondition>();
 			},
 				velocities);
-			algebraicModel.AddToGlobalVector(boundaryConditions
-					.SelectMany(x => x.EnumerateDomainBoundaryConditions())
-					.OfType<IDomainVelocityBoundaryCondition>(),
-				velocities);
+
+			//algebraicModel.AddToGlobalVector(boundaryConditions
+			//		.SelectMany(x => x.EnumerateDomainBoundaryConditions())
+			//		.OfType<IDomainVelocityBoundaryCondition>(),
+			//	velocities);
 
 			if (time == 0)
 			{
@@ -186,7 +192,7 @@ namespace MGroup.Constitutive.Structural
 				{
 					var initialConditions = model.EnumerateInitialConditions(id).ToArray();
 					return initialConditions
-						.SelectMany(x => x.EnumerateNodalInitialConditions())
+						.SelectMany(x => x.EnumerateNodalInitialConditions(model.EnumerateElements(id)))
 						.OfType<INodalVelocityInitialCondition>();
 				},
 					velocities);
@@ -204,15 +210,15 @@ namespace MGroup.Constitutive.Structural
 				{
 					var initialConditions = model.EnumerateInitialConditions(id).ToArray();
 					return initialConditions
-						.SelectMany(x => x.EnumerateNodalInitialConditions())
+						.SelectMany(x => x.EnumerateNodalInitialConditions(model.EnumerateElements(id)))
 						.OfType<INodalDisplacementInitialCondition>();
 				},
 					displacements);
 
-				algebraicModel.AddToGlobalVector(model.EnumerateInitialConditions(model.EnumerateSubdomains().First().ID)
-					.SelectMany(x => x.EnumerateDomainInitialConditions())
-					.OfType<IDomainDisplacementInitialCondition>(),
-				displacements);
+				//algebraicModel.AddToGlobalVector(model.EnumerateInitialConditions(model.EnumerateSubdomains().First().ID)
+				//	.SelectMany(x => x.EnumerateDomainInitialConditions())
+				//	.OfType<IDomainDisplacementInitialCondition>(),
+				//displacements);
 			}
 
 			return displacements;
@@ -231,10 +237,10 @@ namespace MGroup.Constitutive.Structural
 			IGlobalVector rhs = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(id =>
 				model.EnumerateBoundaryConditions(id)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
 					.OfType<INodalLoadBoundaryCondition>()
 					.Where(x => model.EnumerateBoundaryConditions(id)
-						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
 						.OfType<INodalDisplacementBoundaryCondition>()
 						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false),
 				rhs);
@@ -248,10 +254,10 @@ namespace MGroup.Constitutive.Structural
 				}
 
 				return transientBCs
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
 					.OfType<INodalLoadBoundaryCondition>()
 					.Where(x => model.EnumerateBoundaryConditions(id)
-						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
 						.OfType<INodalDisplacementBoundaryCondition>()
 						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
 			},
@@ -385,7 +391,7 @@ namespace MGroup.Constitutive.Structural
 				.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID)))
 				.OfType<INodalLoadBoundaryCondition>()
 				.Where(x => model.EnumerateBoundaryConditions(subdomainID)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID)))
 					.OfType<INodalDisplacementBoundaryCondition>()
 					.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
 
@@ -398,16 +404,19 @@ namespace MGroup.Constitutive.Structural
 
 		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering() =>
 			model.EnumerateSubdomains()
-				.SelectMany(x => model.EnumerateBoundaryConditions(x.ID)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions()).OfType<INodalDisplacementBoundaryCondition>()
+				.Select(x => new Tuple<int, IEnumerable<IBoundaryConditionSet<IDofType>>>(x.ID, model.EnumerateBoundaryConditions(x.ID)))
+					.Select(i => i.Item2
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(i.Item1)))
+						.OfType<INodalDisplacementBoundaryCondition>())
+					.SelectMany(x => x)
 					.OrderBy(x => x.Node.ID)
 					.GroupBy(x => (x.Node.ID, x.DOF))
-					.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount))))
+					.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
 				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
 
 		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering(int subdomainID) =>
 			model.EnumerateBoundaryConditions(subdomainID)
-				.SelectMany(x => x.EnumerateNodalBoundaryConditions()).OfType<INodalDisplacementBoundaryCondition>()
+				.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID))).OfType<INodalDisplacementBoundaryCondition>()
 				.OrderBy(x => x.Node.ID)
 				.GroupBy(x => (x.Node.ID, x.DOF))
 				.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))

@@ -42,7 +42,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions
 			new ConvectionDiffusionBoundaryConditionSet(nodalDirichlet?.Where(x => x.Node.Subdomains.Contains(subdomain.ID)),
 				nodalNeumann?.Where(x => x.Node.Subdomains.Contains(subdomain.ID)), domainDirichlet, domainNeumann);
 
-		public IEnumerable<INodalBoundaryCondition<IConvectionDiffusionDofType>> EnumerateNodalBoundaryConditions() =>
+		public IEnumerable<INodalBoundaryCondition<IConvectionDiffusionDofType>> EnumerateNodalBoundaryConditions(IEnumerable<IElementType> elements) =>
 			nodalDirichlet != null
 			? nodalDirichlet
 				.ToArray<INodalBoundaryCondition<IConvectionDiffusionDofType>>()
@@ -50,13 +50,13 @@ namespace MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions
 				.ToArray()
 			: (nodalNeumann != null ? nodalNeumann.ToArray() : Enumerable.Empty<INodalBoundaryCondition<IConvectionDiffusionDofType>>());
 
-		public IEnumerable<IDomainBoundaryCondition<IConvectionDiffusionDofType>> EnumerateDomainBoundaryConditions() =>
-			domainDirichlet != null
-			? domainDirichlet
-				.ToArray<IDomainBoundaryCondition<IConvectionDiffusionDofType>>()
-				.Concat(domainNeumann != null ? domainNeumann.ToArray<IDomainBoundaryCondition<IConvectionDiffusionDofType>>() : Enumerable.Empty<IDomainBoundaryCondition<IConvectionDiffusionDofType>>())
-				.ToArray()
-			: (domainNeumann != null ? domainNeumann.ToArray() : Enumerable.Empty<IDomainBoundaryCondition<IConvectionDiffusionDofType>>());
+		//public IEnumerable<IDomainBoundaryCondition<IConvectionDiffusionDofType>> EnumerateDomainBoundaryConditions() =>
+		//	domainDirichlet != null
+		//	? domainDirichlet
+		//		.ToArray<IDomainBoundaryCondition<IConvectionDiffusionDofType>>()
+		//		.Concat(domainNeumann != null ? domainNeumann.ToArray<IDomainBoundaryCondition<IConvectionDiffusionDofType>>() : Enumerable.Empty<IDomainBoundaryCondition<IConvectionDiffusionDofType>>())
+		//		.ToArray()
+		//	: (domainNeumann != null ? domainNeumann.ToArray() : Enumerable.Empty<IDomainBoundaryCondition<IConvectionDiffusionDofType>>());
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IConvectionDiffusionDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements)
 		{

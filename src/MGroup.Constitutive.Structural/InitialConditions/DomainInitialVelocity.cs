@@ -1,3 +1,4 @@
+using MGroup.MSolve.DataStructures;
 using MGroup.MSolve.AnalysisWorkflow.Transient;
 using MGroup.MSolve.Discretization;
 
@@ -5,19 +6,29 @@ namespace MGroup.Constitutive.Structural.InitialConditions
 {
 	public class DomainInitialVelocity : IDomainVelocityInitialCondition
 	{
+		private DomainFunction DomainFunction;
+
+		public double Amount(double[] coordinates) => DomainFunction(coordinates);
+
 		public IStructuralDofType DOF { get; }
 
-		public double Amount { get; }
+		public double Multiplier { get; }
 
 		public DifferentiationOrder DifferentiationOrder => DifferentiationOrder.First;
 
-		public DomainInitialVelocity(IStructuralDofType dofType, double amount)
+		public DomainInitialVelocity(IStructuralDofType dofType, double multiplier, DomainFunction domainFunction)
 		{
 			this.DOF = dofType;
-			this.Amount = amount;
+			this.Multiplier = multiplier;
+			this.DomainFunction = domainFunction;
 		}
 
-		IDomainModelQuantity<IStructuralDofType> IDomainModelQuantity<IStructuralDofType>.WithAmount(double amount) => new DomainInitialVelocity(DOF, amount);
-		IDomainInitialCondition<IStructuralDofType> IDomainInitialCondition<IStructuralDofType>.WithAmount(double amount) => new DomainInitialVelocity(DOF, amount);
+		public DomainInitialVelocity(IStructuralDofType dofType, double multiplier)
+			: this(dofType, multiplier, c => multiplier)
+		{
+		}
+
+		IDomainModelQuantity<IStructuralDofType> IDomainModelQuantity<IStructuralDofType>.WithMultiplier(double multiplier) => new DomainInitialVelocity(DOF, multiplier);
+		IDomainInitialCondition<IStructuralDofType> IDomainInitialCondition<IStructuralDofType>.WithMultiplier(double multiplier) => new DomainInitialVelocity(DOF, multiplier);
 	}
 }

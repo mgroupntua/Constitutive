@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="MGroup.LinearAlgebra" Version="0.1.0-unstable.77" />
-    <PackageReference Include="MGroup.MSolve.Core" Version="0.2.0-unstable.65" />
+    <PackageReference Include="MGroup.MSolve.Core" Version="0.2.0-unstable.71" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
