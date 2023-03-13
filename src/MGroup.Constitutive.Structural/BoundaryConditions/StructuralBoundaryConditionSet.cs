@@ -64,7 +64,7 @@ namespace MGroup.Constitutive.Structural.BoundaryConditions
 				throw new NotImplementedException("Dirichlet boundary conditions for elements are not implemented");
 			}
 
-			if (elementNeumann.Any(x => x is IElementDistributedLoadBoundaryCondition == false))
+			if (elementNeumann != null && elementNeumann.Any(x => x is IElementDistributedLoadBoundaryCondition == false))
 			{
 				throw new NotImplementedException("Neumann boundary conditions for elements that are NOT distributed loads, are not implemented");
 			}
