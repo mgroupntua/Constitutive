@@ -9,7 +9,7 @@ namespace MGroup.Constitutive.Structural
 		IMatrix StiffnessMatrix();
 		IMatrix MassMatrix();
 		IMatrix DampingMatrix();
-		IEnumerable<double[]> InterpolateElementModelQuantities(IEnumerable<IElementModelQuantity<IStructuralDofType>> quantities);
+		IEnumerable<IEnumerable<double>> InterpolateElementModelQuantities(IEnumerable<IElementModelQuantity<IStructuralDofType>> quantities, IEnumerable<double[]> coordinates);
 		IEnumerable<double[]> IntegrateElementModelQuantities(IEnumerable<IElementModelQuantity<IStructuralDofType>> quantities);
 	}
 }
