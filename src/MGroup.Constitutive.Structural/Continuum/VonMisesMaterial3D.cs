@@ -49,12 +49,12 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// </summary>
 		private static readonly double[,] SupportiveMatrixForConsistentConstitutiveMatrix = new[,]
 			{
-				{  0, -1, -1, 0,   0,   0   }, 
-				{ -1,  0, -1, 0,   0,   0   }, 
-				{ -1, -1,  0, 0,   0,   0   },
-				{  0,  0,  0, 0.5, 0,   0   },
-				{  0,  0,  0, 0,   0.5, 0   },
-				{  0,  0,  0, 0,   0,   0.5 }
+				{  2.0/3.0, -1.0/3.0, -1.0/3.0, 0,   0,   0 },
+				{ -1.0/3.0, 2.0/3.0, -1.0/3.0, 0,   0,   0 },
+				{ -1.0/3.0, -1.0/3.0, 2.0/3.0, 0,   0,   0  },
+				{  0,  0,  0, 1.0, 0,   0   },
+				{  0,  0,  0, 0,   1.0, 0   },
+				{  0,  0,  0, 0,   0,   1.0 }
 			};
 
 		/// <summary>
@@ -65,7 +65,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// <summary>
 		///   Hardening modulus for linear hardening.
 		/// </summary>
-		private readonly double hardeningRatio;
+		private readonly double hardeningModulus;
 
 		/// <summary>
 		///   The Poisson ratio.
@@ -150,11 +150,11 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// <param name = "yieldStress">
 		///   The yield stress.
 		/// </param>
-		/// <param name = "hardeningRatio">
+		/// <param name = "hardeningModulus">
 		///   The hardening ratio.
 		/// </param>
 		/// <exception cref = "ArgumentException"> When Poisson ratio is equal to 0.5.</exception>
-		public VonMisesMaterial3D(double youngModulus, double poissonRatio, double yieldStress, double hardeningRatio)
+		public VonMisesMaterial3D(double youngModulus, double poissonRatio, double yieldStress, double hardeningModulus)
 		{
 			this.youngModulus = youngModulus;
 
@@ -166,7 +166,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 
 			this.poissonRatio = poissonRatio;
 			this.yieldStress = yieldStress;
-			this.hardeningRatio = hardeningRatio;
+			this.hardeningModulus = hardeningModulus;
 
 			this.shearModulus = this.YoungModulus / (2 * (1 + this.PoissonRatio));
 			double lamda = (youngModulus * poissonRatio) / ((1 + poissonRatio) * (1 - (2 * poissonRatio)));
@@ -211,7 +211,11 @@ namespace MGroup.Constitutive.Structural.Continuum
 		{
 			get
 			{
-				if (this.constitutiveMatrix == null) UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
+				if (this.constitutiveMatrix == null)
+				{
+					UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
+					this.constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				}
 				return constitutiveMatrix;
 			}
 		}
@@ -306,7 +310,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// </returns>
 		public object Clone()
 		{
-			return new VonMisesMaterial3D(this.youngModulus, this.poissonRatio, this.yieldStress, this.hardeningRatio)
+			return new VonMisesMaterial3D(this.youngModulus, this.poissonRatio, this.yieldStress, this.hardeningModulus)
 			{
 				modified = this.IsCurrentStateDifferent(),
 				plasticStrain = this.plasticStrain,
@@ -343,6 +347,12 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// <summary>
 		///   Saves the state of the element's material.
 		/// </summary>
+		/// 
+		public void SaveState()
+		{
+			this.plasticStrain = this.plasticStrainNew;
+			stresses.CopyFrom(stressesNew);
+		}
 		public GenericConstitutiveLawState CreateState()
 		{
 			this.plasticStrain = this.plasticStrainNew;
@@ -394,33 +404,26 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// </summary>
 		/// <param name = "value1"> This is a constant already calculated in the calling method. </param>
 		/// <remarks>
-		///   We need an additional constant here equal to: 2*G*G*deltaPlasticStrain*sqrt(3/J2elastic)
-		///   Since value1 is already calculated, the additional constant can be calculated through it:
-		///   value3 = 2 * G * value1;
+		///   Refer to chapter 7.6.6 page 262 in Souza Neto. 
 		/// </remarks>
-		private void BuildConsistentTangentialConstitutiveMatrix(double value1)
+		private Matrix BuildConsistentTangentialConstitutiveMatrix(double vonMisesStress, double[] unityvector)
 		{
-			this.constitutiveMatrix = Matrix.CreateZero(TotalStresses, TotalStrains);
-			double invariantJ2New = this.GetDeviatorSecondStressInvariant(stressesNew);
-
-			double value2 = (3 * this.shearModulus * this.shearModulus) /
-							((this.hardeningRatio + (3 * this.shearModulus)) * invariantJ2New);
-
-			double value3 = 2 * this.shearModulus * value1;
-			double value4 = 0.5 / invariantJ2New;
-
-			var stressDeviator = this.GetStressDeviator(stressesNew);
-			for (int k1 = 0; k1 < TotalStresses; k1++)
+			Matrix consistenttangent = Matrix.CreateZero(TotalStresses, TotalStrains);
+			this.constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			consistenttangent.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			double dgamma = this.plasticStrainNew - this.plasticStrain;
+			double v1 = -dgamma * 6 * Math.Pow(this.shearModulus, 2) / vonMisesStress;
+			double Hk = 0;
+			double Hi = this.hardeningModulus;
+			double v2 = (dgamma / vonMisesStress - 1 / (3 * this.shearModulus + Hk + Hi)) * 6 * Math.Pow(this.shearModulus, 2);
+			for (int i = 0; i < 6; i++)
 			{
-				for (int k2 = 0; k2 < TotalStresses; k2++)
+				for (int j = 0; j < 6; j++)
 				{
-					this.constitutiveMatrix[k2, k1] = this.elasticConstitutiveMatrix[k2, k1] -
-													  (value2 * stressDeviator[k2] * stressDeviator[k1]) -
-													  (value3 *
-													   (SupportiveMatrixForConsistentConstitutiveMatrix[k2, k1] -
-														(value4 * stressDeviator[k2] * stressDeviator[k1])));
+					consistenttangent[i, j] = this.elasticConstitutiveMatrix[i, j] + v1 * SupportiveMatrixForConsistentConstitutiveMatrix[i, j] + v2 * unityvector[i] * unityvector[j];
 				}
 			}
+			return consistenttangent;
 		}
 
 		/// <summary>
@@ -432,7 +435,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			double invariantJ2New = this.GetDeviatorSecondStressInvariant(stressesNew);
 
 			double value2 = (3 * this.shearModulus * this.shearModulus) /
-							((this.hardeningRatio + (3 * this.shearModulus)) * invariantJ2New);
+							((this.hardeningModulus + (3 * this.shearModulus)) * invariantJ2New);
 
 			var stressDeviator = this.GetStressDeviator(stressesNew);
 			for (int k1 = 0; k1 < TotalStresses; k1++)
@@ -462,7 +465,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			double invariantJ2Elastic = this.GetDeviatorSecondStressInvariant(stressesElastic);
 			double vonMisesStress = Math.Sqrt(3 * invariantJ2Elastic);
 			double vonMisesStressMinusYieldStress = vonMisesStress -
-													(this.yieldStress + (this.hardeningRatio * this.plasticStrain));
+													(this.yieldStress + (this.hardeningModulus * this.plasticStrain));
 
 			bool materialIsInElasticRegion = vonMisesStressMinusYieldStress <= 0;
 
@@ -475,17 +478,19 @@ namespace MGroup.Constitutive.Structural.Continuum
 			else
 			{
 				double deltaPlasticStrain = vonMisesStressMinusYieldStress /
-											((3 * this.shearModulus) + this.hardeningRatio);
+											((3 * this.shearModulus) + this.hardeningModulus);
 				this.plasticStrainNew = this.plasticStrain + deltaPlasticStrain;
-
-				// 2.0 and 1/2 cancel out
-				double value1 = this.shearModulus * deltaPlasticStrain * Math.Sqrt(3 / invariantJ2Elastic);
-				var stressDeviatorElastic = this.GetStressDeviator(stressesElastic);
+				//double[] unityvector = GetStressDeviator(stressesNew);
+				//invariantJ2Elastic = this.GetDeviatorSecondStressInvariant(stressesNew);
+				double[] unityvector = GetStressDeviator(stressesElastic);
+				invariantJ2Elastic = this.GetDeviatorSecondStressInvariant(stressesElastic);
+				unityvector.ScaleIntoThis(Math.Sqrt(1 / (2 * invariantJ2Elastic)));
 				for (int i = 0; i < 6; i++)
-					this.stressesNew[i] = stressesElastic[i] - (value1 * stressDeviatorElastic[i]);
-
-				//this.BuildConsistentTangentialConstitutiveMatrix(value1);
-				this.BuildTangentialConstitutiveMatrix();
+				{
+					this.stressesNew[i] = stressesElastic[i] - (2 * this.shearModulus * deltaPlasticStrain * Math.Sqrt(1.5) * unityvector[i]);
+				}
+				this.constitutiveMatrix = this.BuildConsistentTangentialConstitutiveMatrix(vonMisesStress, unityvector);
+				//this.BuildTangentialConstitutiveMatrix();
 			}
 
 			if (Math.Abs(this.plasticStrainNew) < Math.Abs(this.plasticStrain))
@@ -512,8 +517,8 @@ namespace MGroup.Constitutive.Structural.Continuum
 		///   Calculates and returns the second stress invariant (I2).
 		/// </summary>
 		/// <returns> The second stress invariant (I2).</returns>
-		public double GetSecondStressInvariant(double[] stresses) 
-			=> (stresses[0] * stresses[1]) + (stresses[1] * stresses[2]) + (stresses[0] * stresses[2]) 
+		public double GetSecondStressInvariant(double[] stresses)
+			=> (stresses[0] * stresses[1]) + (stresses[1] * stresses[2]) + (stresses[0] * stresses[2])
 			- Math.Pow(stresses[5], 2) - Math.Pow(stresses[3], 2) - Math.Pow(stresses[4], 2);
 
 		/// <summary>
@@ -540,9 +545,9 @@ namespace MGroup.Constitutive.Structural.Continuum
 		///   Calculates and returns the third stress invariant (I3).
 		/// </summary>
 		/// <returns> The third stress invariant (I3). </returns>
-		public double GetThirdStressInvariant(double[] stresses) 
-			=> (stresses[0] * stresses[1] * stresses[2]) + (2 * stresses[5] * stresses[3] * stresses[4]) 
-			- (Math.Pow(stresses[5], 2) * stresses[2]) -(Math.Pow(stresses[3], 2) * stresses[0]) 
+		public double GetThirdStressInvariant(double[] stresses)
+			=> (stresses[0] * stresses[1] * stresses[2]) + (2 * stresses[5] * stresses[3] * stresses[4])
+			- (Math.Pow(stresses[5], 2) * stresses[2]) - (Math.Pow(stresses[3], 2) * stresses[0])
 			- (Math.Pow(stresses[4], 2) * stresses[1]);
 
 		/// <summary>
@@ -557,10 +562,9 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// <returns> The second stress invariant of the stress deviator tensor (J2). </returns>
 		public double GetDeviatorSecondStressInvariant(double[] stresses)
 		{
-			double i1 = this.GetFirstStressInvariant(stresses);
-			double i2 = this.GetSecondStressInvariant(stresses);
-
-			double j2 = (1 / 3d * Math.Pow(i1, 2)) - i2;
+			double j2 = 0.0;
+			j2 = 1.0 / 6.0 * (Math.Pow((stresses[0] - stresses[1]), 2) + Math.Pow((stresses[2] - stresses[1]), 2) + Math.Pow((stresses[0] - stresses[2]), 2));
+			j2 += Math.Pow((stresses[3]), 2) + Math.Pow((stresses[4]), 2) + Math.Pow((stresses[5]), 2);
 			return j2;
 		}
 
