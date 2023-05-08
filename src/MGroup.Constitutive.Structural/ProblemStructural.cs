@@ -17,6 +17,7 @@ using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.Providers;
 using System.Net.Sockets;
 using System;
+using System.Diagnostics;
 
 namespace MGroup.Constitutive.Structural
 {
@@ -234,17 +235,18 @@ namespace MGroup.Constitutive.Structural
 
 		public IGlobalVector GetRhs(double time)
 		{
-			IGlobalVector rhs = algebraicModel.CreateZeroVector();
-			algebraicModel.AddToGlobalVector(id =>
-				model.EnumerateBoundaryConditions(id)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
-					.OfType<INodalLoadBoundaryCondition>()
-					.Where(x => model.EnumerateBoundaryConditions(id)
-						.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
-						.OfType<INodalDisplacementBoundaryCondition>()
-						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false),
-				rhs);
 
+			IGlobalVector rhs = algebraicModel.CreateZeroVector();
+
+			algebraicModel.AddToGlobalVector(id =>
+			{
+				var allBCs = model.EnumerateBoundaryConditions(id).SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id))).ToArray();
+				var nodalLoads = allBCs.OfType<INodalLoadBoundaryCondition>();
+				var nodalDisplacements = allBCs.OfType<INodalDisplacementBoundaryCondition>();
+				var validLoads = nodalLoads.Where(x => nodalDisplacements.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false).ToArray();
+
+				return validLoads;
+			}, rhs);
 			algebraicModel.AddToGlobalVector(id =>
 			{
 				var transientBCs = model.EnumerateBoundaryConditions(id).OfType<ITransientBoundaryConditionSet<IStructuralDofType>>().ToArray();
