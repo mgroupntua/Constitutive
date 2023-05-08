@@ -17,6 +17,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 {
 	public class ProblemConvectionDiffusion : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
+		private readonly ElementConvectionDiffusionInternalForcesProvider rhsProvider = new ElementConvectionDiffusionInternalForcesProvider();
 		private readonly IModel model;
 		private readonly IAlgebraicModel algebraicModel;
 		private readonly ElementProductionProvider productionProvider = new ElementProductionProvider();
@@ -223,14 +224,40 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 		public IGlobalVector CalculateResponseIntegralVector(IGlobalVector solution)
 		{
-			throw new NotImplementedException();
+			IGlobalVector internalRhs = algebraicModel.CreateZeroVector();
+			if (analysisPhase != TransientAnalysisPhase.InitialConditionEvaluation)
+			{
+				var dirichletBoundaryConditions = algebraicModel.BoundaryConditionsInterpreter.GetDirichletBoundaryConditionsWithNumbering()
+				.Select(x => new NodalBoundaryCondition(x.Value.Node, x.Key.DOF, x.Value.Amount));
+				// First update the state of the elements
+				algebraicModel.DoPerElement<IConvectionDiffusionElementType>(element =>
+				{
+					double[] elementDisplacements = algebraicModel.ExtractElementVector(solution, element);
+					element.MapNodalBoundaryConditionsToElementVector(dirichletBoundaryConditions, elementDisplacements);
+					element.CalculateResponse(elementDisplacements);
+				});
+
+				// Then calculate the internal rhs vector
+				algebraicModel.AddToGlobalVector(internalRhs, rhsProvider);
+			}
+			else
+			{
+				CapacityMatrix.MultiplyVector(solution, internalRhs);
+			}
+
+			return internalRhs;
 		}
 
 		public void UpdateState(IHaveState externalState)
 		{
-			throw new NotImplementedException();
+			if (analysisPhase != TransientAnalysisPhase.InitialConditionEvaluation)
+			{
+				algebraicModel.DoPerElement<IConvectionDiffusionElementType>(element =>
+				{
+					element.SaveConstitutiveLawState(externalState);
+				});
+			}
 		}
-
 		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
 			model.EnumerateBoundaryConditions(subdomainID)
 				.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID)))
