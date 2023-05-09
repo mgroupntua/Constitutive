@@ -67,7 +67,8 @@ namespace MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions
 			}
 
 			var equivalentNodalNeummannBoundaryConditions = new List<INodalUnknownVariableFluxBoundaryCondition>();
-			var unknownVariableDirichletBoundaryConditions = nodalDirichlet.OfType<INodalUnknownVariableBoundaryCondition>();
+			var unknownVariableDirichletBoundaryConditions = nodalDirichlet.OfType<INodalUnknownVariableBoundaryCondition>()
+				.Where(x => dofsToExclude.Any(d => d.NodeID == x.Node.ID && d.DOF == x.DOF) == false);
 
 			foreach (var element in elements.OfType<IConvectionDiffusionElementType>())
 			{

@@ -197,7 +197,7 @@ namespace MGroup.Constitutive.Thermal
 
 		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
 			model.EnumerateBoundaryConditions(subdomainID)
-				.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID)))
+				.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID), Array.Empty<(int NodeID, IDofType DOF)>()))
 				.OfType<INodalHeatFluxBoundaryCondition>()
 				.Where(x => model.EnumerateBoundaryConditions(subdomainID)
 					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID)))

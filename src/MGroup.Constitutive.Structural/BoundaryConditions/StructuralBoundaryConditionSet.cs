@@ -122,7 +122,8 @@ namespace MGroup.Constitutive.Structural.BoundaryConditions
 			}
 
 			var equivalentNodalNeummannBoundaryConditions = new List<INodalLoadBoundaryCondition>();
-			var displacementBoundaryConditions = nodalDirichlet.OfType<INodalDisplacementBoundaryCondition>();
+			var displacementBoundaryConditions = nodalDirichlet.OfType<INodalDisplacementBoundaryCondition>()
+				.Where(x => dofsToExclude.Any(d => d.NodeID == x.Node.ID && d.DOF == x.DOF) == false);
 
 			foreach (var element in elements.OfType<IStructuralElementType>())
 			{
