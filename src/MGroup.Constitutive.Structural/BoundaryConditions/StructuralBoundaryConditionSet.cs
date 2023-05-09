@@ -4,6 +4,7 @@ using System.Linq;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.BoundaryConditions;
+using MGroup.MSolve.Discretization.Dofs;
 using MGroup.MSolve.Discretization.Entities;
 
 namespace MGroup.Constitutive.Structural.BoundaryConditions
@@ -102,7 +103,8 @@ namespace MGroup.Constitutive.Structural.BoundaryConditions
 		//		.ToArray()
 		//	: (domainNeumann != null ? domainNeumann.ToArray() : Enumerable.Empty<IDomainBoundaryCondition<IStructuralDofType>>());
 
-		public IEnumerable<INodalNeumannBoundaryCondition<IStructuralDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements)
+		public IEnumerable<INodalNeumannBoundaryCondition<IStructuralDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements, 
+			IEnumerable<(int NodeID, IDofType DOF)> dofsToExclude)
 		{
 			if (domainDirichlet != null)
 			{

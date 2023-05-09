@@ -15,6 +15,22 @@ using System;
 
 namespace MGroup.Constitutive.ConvectionDiffusion
 {
+	public enum BoundaryConditionPrecedence
+	{
+		/// <summary>
+		/// If a node has both a flux and an unknown variable boundary condition, an exception is raised
+		/// </summary>
+		NoPrecedence = 0,
+		/// <summary>
+		/// If a node has both a flux and a unknown variable boundary condition, the unknown variable boundary condition is IGNORED
+		/// </summary>
+		FluxPrecedence,
+		/// <summary>
+		/// If a node has both a flux and a unknown variable boundary condition, the flux boundary condition is IGNORED
+		/// </summary>
+		UnknownVariablePrecedence
+	}
+
 	public class ProblemConvectionDiffusion : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
 		private readonly ElementConvectionDiffusionInternalForcesProvider rhsProvider = new ElementConvectionDiffusionInternalForcesProvider();
@@ -26,16 +42,23 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		private readonly ElementConvectionProvider convectionProvider = new ElementConvectionProvider();
 		private readonly ElementCapacityMatrixProvider fistTimeDerivativeMatrixProvider = new ElementCapacityMatrixProvider();
 		private readonly IElementMatrixPredicate rebuildDiffusionPredicate = new MaterialModifiedElementMarixPredicate();
+		private readonly BoundaryConditionPrecedence precedence;
 		private IGlobalMatrix convection, diffusion, production, capacityMatrix;
 		private TransientAnalysisPhase analysisPhase = TransientAnalysisPhase.SteadyStateSolution;
 
-		public ProblemConvectionDiffusion(IModel model, IAlgebraicModel algebraicModel)
+		public ProblemConvectionDiffusion(IModel model, IAlgebraicModel algebraicModel, BoundaryConditionPrecedence precedence)
 		{
 			this.model = model;
+			this.precedence = precedence;
 			this.algebraicModel = algebraicModel;
 			algebraicModel.BoundaryConditionsInterpreter = this;
 
 			ActiveDofs.AddDof(ConvectionDiffusionDof.UnknownVariable);
+		}
+
+		public ProblemConvectionDiffusion(IModel model, IAlgebraicModel algebraicModel)
+			: this(model, algebraicModel, BoundaryConditionPrecedence.NoPrecedence)
+		{
 		}
 
 		private IGlobalMatrix Convection
@@ -115,6 +138,69 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			_ => algebraicModel.CreateEmptyMatrix(),
 		};
 
+		private static IEnumerable<T> GetNeumannBoundaryConditionsAccordingToPrecedence<T>(INodalBoundaryCondition<IDofType>[] allBCs, BoundaryConditionPrecedence precedence)
+			where T : INodalBoundaryCondition<IConvectionDiffusionDofType>
+		{
+			var nodalNeumann = allBCs.OfType<T>().ToArray();
+			var nodalDirichlet = allBCs.OfType<INodalUnknownVariableBoundaryCondition>();
+			var validNeumann = nodalNeumann.Where(x => nodalDirichlet.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false).ToArray();
+			if (precedence == BoundaryConditionPrecedence.NoPrecedence && nodalNeumann.Length != validNeumann.Length)
+			{
+				var duplicateLoadNodes = nodalNeumann.Except(validNeumann).Select(x => $"({x.Node.ID}, {x.DOF})").Aggregate(String.Empty, (s, n) => s + n + ", ");
+				throw new ArgumentException($"Boundary conditions for both fluxes and unknown variables at nodes {duplicateLoadNodes}");
+			}
+
+			return precedence == BoundaryConditionPrecedence.FluxPrecedence ? nodalNeumann : validNeumann;
+		}
+
+		private IEnumerable<T> GetNeumannBoundaryConditionsAccordingToPrecedence<T>(INodalBoundaryCondition<IDofType>[] allBCs)
+			where T : INodalBoundaryCondition<IConvectionDiffusionDofType> => GetNeumannBoundaryConditionsAccordingToPrecedence<T>(allBCs, precedence);
+
+		private IEnumerable<T> GetNeumannInitialConditionsAccordingToPrecedence<T>(INodalInitialCondition<IDofType>[] allBCs)
+			where T : INodalInitialCondition<IConvectionDiffusionDofType>
+		{
+			var nodalNeumann = allBCs.OfType<T>().ToArray();
+			var nodalDirichlet = allBCs.OfType<INodalUnknownVariableBoundaryCondition>();
+			var validNeumann = nodalNeumann.Where(x => nodalDirichlet.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false).ToArray();
+			if (precedence == BoundaryConditionPrecedence.NoPrecedence && nodalNeumann.Length != validNeumann.Length)
+			{
+				var duplicateLoadNodes = nodalNeumann.Except(validNeumann).Select(x => $"({x.Node.ID}, {x.DOF})").Aggregate(String.Empty, (s, n) => s + n + ", ");
+				throw new ArgumentException($"Boundary conditions for both fluxes and unknown variables at nodes {duplicateLoadNodes}");
+			}
+
+			return precedence == BoundaryConditionPrecedence.FluxPrecedence ? nodalNeumann : validNeumann;
+		}
+
+		private IEnumerable<T> GetDirichletBoundaryConditionsAccordingToPrecedence<T>(INodalBoundaryCondition<IDofType>[] allBCs)
+			where T : INodalBoundaryCondition<IConvectionDiffusionDofType>
+		{
+			var nodalDirichlet = allBCs.OfType<T>().ToArray();
+			var nodalNeumann = allBCs.OfType<INodalUnknownVariableFluxBoundaryCondition>();
+			var validDirichlet = nodalDirichlet.Where(x => nodalNeumann.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false).ToArray();
+			if (precedence == BoundaryConditionPrecedence.NoPrecedence && nodalDirichlet.Length != validDirichlet.Length)
+			{
+				var duplicateLoadNodes = nodalDirichlet.Except(validDirichlet).Select(x => $"({x.Node.ID}, {x.DOF})").Aggregate(String.Empty, (s, n) => s + n + ", ");
+				throw new ArgumentException($"Boundary conditions for both fluxes and unknown variables at nodes {duplicateLoadNodes}");
+			}
+
+			return precedence == BoundaryConditionPrecedence.UnknownVariablePrecedence ? nodalDirichlet : validDirichlet;
+		}
+
+		private IEnumerable<T> GetDirichletInitialConditionsAccordingToPrecedence<T>(INodalInitialCondition<IDofType>[] allBCs)
+			where T : INodalInitialCondition<IConvectionDiffusionDofType>
+		{
+			var nodalDirichlet = allBCs.OfType<T>().ToArray();
+			var nodalNeumann = allBCs.OfType<INodalUnknownVariableFluxBoundaryCondition>();
+			var validDirichlet = nodalDirichlet.Where(x => nodalNeumann.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false).ToArray();
+			if (precedence == BoundaryConditionPrecedence.NoPrecedence && nodalDirichlet.Length != validDirichlet.Length)
+			{
+				var duplicateLoadNodes = nodalDirichlet.Except(validDirichlet).Select(x => $"({x.Node.ID}, {x.DOF})").Aggregate(String.Empty, (s, n) => s + n + ", ");
+				throw new ArgumentException($"Boundary conditions for both fluxes and unknown variables at nodes {duplicateLoadNodes}");
+			}
+
+			return precedence == BoundaryConditionPrecedence.UnknownVariablePrecedence ? nodalDirichlet : validDirichlet;
+		}
+
 		private IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
 			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
@@ -124,8 +210,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			}
 
 			IGlobalVector capacities = algebraicModel.CreateZeroVector();
-			algebraicModel.AddToGlobalVector(
-			id =>
+			algebraicModel.AddToGlobalVector(id =>
 			{
 				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
 				foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IConvectionDiffusionDofType>>())
@@ -133,16 +218,13 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 					boundaryCondition.CurrentTime = time;
 				}
 
-				return boundaryConditions
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
-					.OfType<INodalCapacityBoundaryCondition>();
+				return GetNeumannBoundaryConditionsAccordingToPrecedence<INodalCapacityBoundaryCondition>(boundaryConditions.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id))).ToArray());
+
+				//return boundaryConditions
+				//	.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
+				//	.OfType<INodalCapacityBoundaryCondition>();
 			},
 			capacities);
-
-			//algebraicModel.AddToGlobalVector(boundaryConditions
-			//	.SelectMany(x => x.EnumerateDomainBoundaryConditions())
-			//	.OfType<IDomainCapacityBoundaryCondition>(),
-			//capacities);
 
 			return capacities;
 		}
@@ -153,20 +235,15 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 
 			if (time == 0)
 			{
-				algebraicModel.AddToGlobalVector(
-				id =>
+				algebraicModel.AddToGlobalVector(id =>
 				{
 					var initialConditions = model.EnumerateInitialConditions(id).ToArray();
-					return initialConditions
-						.SelectMany(x => x.EnumerateNodalInitialConditions(model.EnumerateElements(id)))
-						.OfType<INodalUnknownVariableInitialCondition>();
+					return GetDirichletInitialConditionsAccordingToPrecedence<INodalUnknownVariableInitialCondition>(initialConditions.SelectMany(x => x.EnumerateNodalInitialConditions(model.EnumerateElements(id))).ToArray());
+					//return initialConditions
+					//	.SelectMany(x => x.EnumerateNodalInitialConditions(model.EnumerateElements(id)))
+					//	.OfType<INodalUnknownVariableInitialCondition>();
 				},
 				unknownVariables);
-
-				//algebraicModel.AddToGlobalVector(model.EnumerateInitialConditions(model.EnumerateSubdomains().First().ID)
-				//	.SelectMany(x => x.EnumerateDomainInitialConditions())
-				//	.OfType<IDomainUnknownVariableInitialCondition>(),
-				//unknownVariables);
 			}
 
 			return unknownVariables;
@@ -184,15 +261,19 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			var rhs = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(rhs, independentProductionProvider);
 
-			algebraicModel.AddToGlobalVector(id =>
-				model.EnumerateBoundaryConditions(id)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
-					.OfType<INodalUnknownVariableFluxBoundaryCondition>()
-					.Where(x => model.EnumerateBoundaryConditions(id)
-						.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
-						.OfType<INodalUnknownVariableBoundaryCondition>()
-						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false),
-					rhs);
+			algebraicModel.AddToGlobalVector(id => GetNeumannBoundaryConditionsAccordingToPrecedence<INodalUnknownVariableFluxBoundaryCondition>(model.EnumerateBoundaryConditions(id)
+				.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
+				.ToArray()),
+				rhs);
+			//algebraicModel.AddToGlobalVector(id =>
+			//	model.EnumerateBoundaryConditions(id)
+			//		.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
+			//		.OfType<INodalUnknownVariableFluxBoundaryCondition>()
+			//		.Where(x => model.EnumerateBoundaryConditions(id)
+			//			.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
+			//			.OfType<INodalUnknownVariableBoundaryCondition>()
+			//			.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false),
+			//		rhs);
 
 			algebraicModel.AddToGlobalVector(id =>
 			{
@@ -202,13 +283,14 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 					boundaryCondition.CurrentTime = time;
 				}
 
-				return transientBCs
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
-					.OfType<INodalUnknownVariableFluxBoundaryCondition>()
-					.Where(x => model.EnumerateBoundaryConditions(id)
-						.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
-						.OfType<INodalUnknownVariableBoundaryCondition>()
-						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
+				return GetNeumannBoundaryConditionsAccordingToPrecedence<INodalUnknownVariableFluxBoundaryCondition>(transientBCs.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id))).ToArray());
+				//return transientBCs
+				//	.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
+				//	.OfType<INodalUnknownVariableFluxBoundaryCondition>()
+				//	.Where(x => model.EnumerateBoundaryConditions(id)
+				//		.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
+				//		.OfType<INodalUnknownVariableBoundaryCondition>()
+				//		.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
 			},
 				rhs);
 			
@@ -258,34 +340,76 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 				});
 			}
 		}
-		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
-			model.EnumerateBoundaryConditions(subdomainID)
-				.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID)))
-				.OfType<INodalUnknownVariableFluxBoundaryCondition>()
-				.Where(x => model.EnumerateBoundaryConditions(subdomainID)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID)))
-					.OfType<INodalUnknownVariableBoundaryCondition>()
-					.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
+
+		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID)
+		{
+			var dirichletBoundaryConditions = model.EnumerateBoundaryConditions(subdomainID)
+				.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID)))
+				.OfType<INodalUnknownVariableBoundaryCondition>()
+				.ToArray();
+
+			var dofsToExclude = precedence != BoundaryConditionPrecedence.FluxPrecedence
+				? Array.Empty<(int NodeID, IDofType DOF)>()
+				: dirichletBoundaryConditions
+					.Select(x => (x.Node.ID, (IDofType)x.DOF))
+					.Distinct()
+					.ToArray();
+
+			var nodalNeumannBoundaryConditions = model.EnumerateBoundaryConditions(subdomainID)
+					.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID), dofsToExclude))
+					.Select(x => (INodalBoundaryCondition<IConvectionDiffusionDofType>)x)
+					.Concat(dirichletBoundaryConditions)
+					.ToArray();
+
+			return GetNeumannBoundaryConditionsAccordingToPrecedence<INodalUnknownVariableFluxBoundaryCondition>(nodalNeumannBoundaryConditions, BoundaryConditionPrecedence.UnknownVariablePrecedence);
+		}
+
+		//public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
+		//	GetDirichletBoundaryConditionsAccordingToPrecedence<INodalUnknownVariableFluxBoundaryCondition>(model.EnumerateBoundaryConditions(subdomainID)
+		//		.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID)))
+		//		.ToArray());
+		////model.EnumerateBoundaryConditions(subdomainID)
+		////	.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID)))
+		////	.OfType<INodalUnknownVariableFluxBoundaryCondition>()
+		////	.Where(x => model.EnumerateBoundaryConditions(subdomainID)
+		////		.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID)))
+		////		.OfType<INodalUnknownVariableBoundaryCondition>()
+		////		.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
 
 		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering() =>
 			model.EnumerateSubdomains()
 				.Select(x => new Tuple<int, IEnumerable<IBoundaryConditionSet<IDofType>>>(x.ID, model.EnumerateBoundaryConditions(x.ID)))
 					.Select(i => i.Item2
-						.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(i.Item1)))
-						.OfType<INodalUnknownVariableBoundaryCondition>())
+						.SelectMany(x => GetDirichletBoundaryConditionsAccordingToPrecedence<INodalUnknownVariableBoundaryCondition>(x.EnumerateNodalBoundaryConditions(model.EnumerateElements(i.Item1)).ToArray())))
 					.SelectMany(x => x)
 					.OrderBy(x => x.Node.ID)
 					.GroupBy(x => (x.Node.ID, x.DOF))
 					.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
 				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
+		//model.EnumerateSubdomains()
+		//		.Select(x => new Tuple<int, IEnumerable<IBoundaryConditionSet<IDofType>>>(x.ID, model.EnumerateBoundaryConditions(x.ID)))
+		//			.Select(i => i.Item2
+		//				.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(i.Item1)))
+		//				.OfType<INodalUnknownVariableBoundaryCondition>())
+		//			.SelectMany(x => x)
+		//			.OrderBy(x => x.Node.ID)
+		//			.GroupBy(x => (x.Node.ID, x.DOF))
+		//			.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
+		//		.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
 
 		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering(int subdomainID) =>
-			model.EnumerateBoundaryConditions(subdomainID)
-				.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID))).OfType<INodalUnknownVariableBoundaryCondition>()
+			GetDirichletBoundaryConditionsAccordingToPrecedence<INodalUnknownVariableBoundaryCondition>(model.EnumerateBoundaryConditions(subdomainID)
+					.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID))).ToArray())
 				.OrderBy(x => x.Node.ID)
 				.GroupBy(x => (x.Node.ID, x.DOF))
 				.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
 				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
+		//model.EnumerateBoundaryConditions(subdomainID)
+		//	.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID))).OfType<INodalUnknownVariableBoundaryCondition>()
+		//	.OrderBy(x => x.Node.ID)
+		//	.GroupBy(x => (x.Node.ID, x.DOF))
+		//	.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
+		//	.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
 
 		public IGlobalVector GetRhs() => GetRhs(0);
 	}

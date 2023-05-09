@@ -58,7 +58,8 @@ namespace MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions
 		//		.ToArray()
 		//	: (domainNeumann != null ? domainNeumann.ToArray() : Enumerable.Empty<IDomainBoundaryCondition<IConvectionDiffusionDofType>>());
 
-		public IEnumerable<INodalNeumannBoundaryCondition<IConvectionDiffusionDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements)
+		public IEnumerable<INodalNeumannBoundaryCondition<IConvectionDiffusionDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements,
+			IEnumerable<(int NodeID, IDofType DOF)> dofsToExclude)
 		{
 			if (nodalDirichlet == null)
 			{

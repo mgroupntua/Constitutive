@@ -5,6 +5,7 @@ using System.Text;
 
 using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.BoundaryConditions;
+using MGroup.MSolve.Discretization.Dofs;
 using MGroup.MSolve.Discretization.Entities;
 
 namespace MGroup.Constitutive.Structural.BoundaryConditions
@@ -19,7 +20,8 @@ namespace MGroup.Constitutive.Structural.BoundaryConditions
 		public override IBoundaryConditionSet<IStructuralDofType> CreateBoundaryConditionSetOfSubdomain(ISubdomain subdomain) =>
 			new StructuralTransientBoundaryConditionSet(boundaryConditionSets.Select(x => x.CreateBoundaryConditionSetOfSubdomain(subdomain)), timeFunc);
 
-		public override IEnumerable<INodalNeumannBoundaryCondition<IStructuralDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements) => 
-			boundaryConditionSets.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(elements));
+		public override IEnumerable<INodalNeumannBoundaryCondition<IStructuralDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements,
+			IEnumerable<(int NodeID, IDofType DOF)> dofsToExclude) => 
+			boundaryConditionSets.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(elements, dofsToExclude));
 	}
 }
