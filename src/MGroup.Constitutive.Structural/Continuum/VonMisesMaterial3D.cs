@@ -290,7 +290,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// <value>
 		///   <c>true</c> if modified; otherwise, <c>false</c>.
 		/// </value>
-		public bool Modified => this.modified;
+		public bool IsCurrentStateDifferent() => modified;
 
 		/// <summary>
 		///   Gets the plastic strain.
@@ -357,7 +357,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		{
 			return new VonMisesMaterial3D(this.youngModulus, this.poissonRatio, this.initialYieldStress, this.hardeningRatio)
 			{
-				modified = this.Modified,
+				modified = this.IsCurrentStateDifferent(),
 				strainsEquivalent = this.strainsEquivalent,
 				strainsEquivalentPrev = this.strainsEquivalentPrev,
 				incrementalStrains = incrementalStrains.Copy(),
@@ -392,8 +392,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		}
 
 		/// <summary>
-		/// Saves the current stress strain state of the material (after convergence of the iterative solution process
-		/// for a given loading step).
+		/// Saves the state of the element's material.
 		/// </summary>
 		public GenericConstitutiveLawState CreateState()
 		{
