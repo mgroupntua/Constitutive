@@ -72,7 +72,7 @@ steps:
     publishTestResults: true
 
 - task: PowerShell@2
-  enabled: false
+  enabled: true
   displayName: Clone MSolve.Tests
   inputs:
     targetType: inline
@@ -80,7 +80,7 @@ steps:
     pwsh: true
 
 - task: CopyFiles@2
-  enabled: false
+  enabled: true
   displayName: Copy Constitutive project on MSolve.Tests
   inputs:
     sourceFolder: 'D:\a\1\s'
@@ -91,7 +91,7 @@ steps:
     cleanTargetFolder: true # Optional
 
 - task: PowerShell@2
-  enabled: false
+  enabled: true
   displayName: Clone FEM in Integration Tests
   inputs:
     targetType: inline
@@ -100,43 +100,62 @@ steps:
 
 - script: dotnet remove D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Structural\MGroup.FEM.Structural.csproj package MGroup.Constitutive.Structural
   displayName: Remove Package Constitutive.Structural from FEM.Structural
-  enabled: false
+  enabled: true
 
 - script: dotnet add D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Structural\MGroup.FEM.Structural.csproj reference D:\a\1\s\integrationTests\Constitutive\src\MGroup.Constitutive.Structural\MGroup.Constitutive.Structural.csproj
   displayName: Add project ref Constitutive.Structural to FEM.Structural
-  enabled: false
+  enabled: true
 
 - script: dotnet remove D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Thermal\MGroup.FEM.Thermal.csproj package MGroup.Constitutive.Thermal
   displayName: Remove Package Constitutive.Thermal from FEM.Thermal
-  enabled: false
+  enabled: true
 
 - script: dotnet add D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Thermal\MGroup.FEM.Thermal.csproj reference D:\a\1\s\integrationTests\Constitutive\src\MGroup.Constitutive.Thermal\MGroup.Constitutive.Thermal.csproj
   displayName: Add project ref Constitutive.Thermal to FEM.Thermal
-  enabled: false
+  enabled: true
+
+- script: dotnet remove D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.ConvectionDiffusion\MGroup.FEM.ConvectionDiffusion.csproj package MGroup.Constitutive.ConvectionDiffusion
+  displayName: Remove Package Constitutive.ConvectionDiffusion from FEM.ConvectionDiffusion
+  enabled: true
+
+- script: dotnet add D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.ConvectionDiffusion\MGroup.FEM.ConvectionDiffusion.csproj reference D:\a\1\s\integrationTests\Constitutive\src\MGroup.Constitutive.ConvectionDiffusion\MGroup.Constitutive.ConvectionDiffusion.csproj
+  displayName: Add project ref Constitutive.ConvectionDiffusion to FEM.ConvectionDiffusion
+  enabled: true
 
 - script: dotnet remove D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Structural.Tests\MGroup.FEM.Structural.Tests.csproj package MGroup.FEM.Structural
   displayName: Remove Package FEM.Structural from MSolve.Tests
-  enabled: false
+  enabled: true
 
 - script: dotnet add D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Structural.Tests\MGroup.FEM.Structural.Tests.csproj reference D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Structural\MGroup.FEM.Structural.csproj
   displayName: Add project ref FEM.Structural to MSolve.Tests
-  enabled: false
+  enabled: true
 
 - script: dotnet remove D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Thermal.Tests\MGroup.FEM.Thermal.Tests.csproj package MGroup.FEM.Thermal
   displayName: Remove Package FEM.Thermal from MSolve.Tests
-  enabled: false
+  enabled: true
 
 - script: dotnet add D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Thermal.Tests\MGroup.FEM.Thermal.Tests.csproj reference D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.Thermal\MGroup.FEM.Thermal.csproj
   displayName: Add project ref FEM.Thermal to MSolve.Tests
-  enabled: false
+  enabled: true
+
+- script: dotnet remove D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.ConvectionDiffusion.Tests\MGroup.FEM.ConvectionDiffusion.Tests.csproj package MGroup.FEM.ConvectionDiffusion
+  displayName: Remove Package FEM.ConvectionDiffusion from MSolve.Tests
+  enabled: true
+
+- script: dotnet add D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.ConvectionDiffusion.Tests\MGroup.FEM.ConvectionDiffusion.Tests.csproj reference D:\a\1\s\integrationTests\FEM\src\MGroup.FEM.ConvectionDiffusion\MGroup.FEM.ConvectionDiffusion.csproj
+  displayName: Add project ref FEM.ConvectionDiffusion to MSolve.Tests
+  enabled: true
 
 - task: DotNetCoreCLI@2
-  enabled: false
+  enabled: true
   displayName: Runs MSolve.Tests (master)
   condition: eq(variables['Build.SourceBranch'], 'refs/heads/develop')
   inputs:
     command: 'test'
-    projects: '**/*[Tt]ests/*.csproj'
+    projects: |
+      D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Structural.Tests\MGroup.FEM.Structural.Tests.csproj
+      D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.Thermal.Tests\MGroup.FEM.Thermal.Tests.csproj
+      D:\a\1\s\integrationTests\MSolve.Tests\tests\MGroup.FEM.ConvectionDiffusion.Tests\MGroup.FEM.ConvectionDiffusion.Tests.csproj
     arguments: '--configuration $(BuildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
     publishTestResults: true
 

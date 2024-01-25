@@ -1,3 +1,5 @@
+#pragma warning disable SA1116 // Split parameters should start on line after declaration
+
 using System.Collections.Generic;
 using System.Linq;
 using MGroup.Constitutive.Structural.BoundaryConditions;
@@ -13,9 +15,28 @@ using MGroup.MSolve.Solution.LinearSystem;
 using MGroup.MSolve.DataStructures;
 using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.Providers;
+using System.Net.Sockets;
+using System;
+using System.Diagnostics;
 
 namespace MGroup.Constitutive.Structural
 {
+	public enum BoundaryConditionPrecedence
+	{
+		/// <summary>
+		/// If a node has both a load and a displacement boundary condition, an exception is raised
+		/// </summary>
+		NoPrecedence = 0,
+		/// <summary>
+		/// If a node has both a load and a displacement boundary condition, the displacement boundary condition is IGNORED
+		/// </summary>
+		LoadPrecedence,
+		/// <summary>
+		/// If a node has both a load and a displacement boundary condition, the load boundary condition is IGNORED
+		/// </summary>
+		DisplacementPrecedence
+	}
+
 	public class ProblemStructural : IAlgebraicModelInterpreter, ITransientAnalysisProvider, INonTransientAnalysisProvider, INonLinearProvider
 	{
 		private readonly IModel model;
@@ -25,11 +46,13 @@ namespace MGroup.Constitutive.Structural
 		private readonly ElementStructuralDampingProvider dampingProvider = new ElementStructuralDampingProvider();
 		private readonly ElementStructuralInternalForcesProvider rhsProvider = new ElementStructuralInternalForcesProvider();
 		private readonly IElementMatrixPredicate rebuildStiffnessPredicate = new MaterialModifiedElementMarixPredicate();
+		private readonly BoundaryConditionPrecedence precedence;
 		private IGlobalMatrix mass, damping, stiffness;
 		private TransientAnalysisPhase analysisPhase = TransientAnalysisPhase.SteadyStateSolution;
 
-		public ProblemStructural(IModel model, IAlgebraicModel algebraicModel)
+		public ProblemStructural(IModel model, IAlgebraicModel algebraicModel, BoundaryConditionPrecedence precedence)
 		{
+			this.precedence = precedence;
 			this.model = model;
 			this.algebraicModel = algebraicModel;
 			this.algebraicModel.BoundaryConditionsInterpreter = this;
@@ -40,6 +63,11 @@ namespace MGroup.Constitutive.Structural
 			ActiveDofs.AddDof(StructuralDof.RotationX);
 			ActiveDofs.AddDof(StructuralDof.RotationY);
 			ActiveDofs.AddDof(StructuralDof.RotationZ);
+		}
+
+		public ProblemStructural(IModel model, IAlgebraicModel algebraicModel)
+			: this(model, algebraicModel, BoundaryConditionPrecedence.NoPrecedence)
+		{
 		}
 
 		private IGlobalMatrix Mass
@@ -123,14 +151,71 @@ namespace MGroup.Constitutive.Structural
 			_ => algebraicModel.CreateEmptyMatrix(),
 		};
 
-		private IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time)
+		private static IEnumerable<T> GetNeumannBoundaryConditionsAccordingToPrecedence<T>(INodalBoundaryCondition<IDofType>[] allBCs, BoundaryConditionPrecedence precedence)
+			where T : INodalBoundaryCondition<IStructuralDofType>
 		{
-			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
-			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
+			var nodalNeumann = allBCs.OfType<T>().ToArray();
+			var nodalDirichlet = allBCs.OfType<INodalDisplacementBoundaryCondition>();
+			var validNeumann = nodalNeumann.Where(x => nodalDirichlet.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false).ToArray();
+			if (precedence == BoundaryConditionPrecedence.NoPrecedence && nodalNeumann.Length != validNeumann.Length)
 			{
-				boundaryCondition.CurrentTime = time;
+				var duplicateLoadNodes = nodalNeumann.Except(validNeumann).Select(x => $"({x.Node.ID}, {x.DOF})").Aggregate(String.Empty, (s, n) => s + n + ", ");
+				throw new ArgumentException($"Boundary conditions for both loads/velocities/accelerations and displacements at nodes {duplicateLoadNodes}");
 			}
 
+			return precedence == BoundaryConditionPrecedence.LoadPrecedence ? nodalNeumann : validNeumann;
+		}
+
+		private IEnumerable<T> GetNeumannBoundaryConditionsAccordingToPrecedence<T>(INodalBoundaryCondition<IDofType>[] allBCs)
+			where T : INodalBoundaryCondition<IStructuralDofType> => GetNeumannBoundaryConditionsAccordingToPrecedence<T>(allBCs, precedence);
+
+		private IEnumerable<T> GetNeumannInitialConditionsAccordingToPrecedence<T>(INodalInitialCondition<IDofType>[] allBCs)
+			where T : INodalInitialCondition<IStructuralDofType>
+		{
+			var nodalNeumann = allBCs.OfType<T>().ToArray();
+			var nodalDirichlet = allBCs.OfType<INodalDisplacementBoundaryCondition>();
+			var validNeumann = nodalNeumann.Where(x => nodalDirichlet.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false).ToArray();
+			if (precedence == BoundaryConditionPrecedence.NoPrecedence && nodalNeumann.Length != validNeumann.Length)
+			{
+				var duplicateLoadNodes = nodalNeumann.Except(validNeumann).Select(x => $"({x.Node.ID}, {x.DOF})").Aggregate(String.Empty, (s, n) => s + n + ", ");
+				throw new ArgumentException($"Boundary conditions for both loads/velocities/accelerations and displacements at nodes {duplicateLoadNodes}");
+			}
+
+			return precedence == BoundaryConditionPrecedence.LoadPrecedence ? nodalNeumann : validNeumann;
+		}
+
+		private IEnumerable<T> GetDirichletBoundaryConditionsAccordingToPrecedence<T>(INodalBoundaryCondition<IDofType>[] allBCs)
+			where T : INodalBoundaryCondition<IStructuralDofType>
+		{
+			var nodalDirichlet = allBCs.OfType<T>().ToArray();
+			var nodalNeumann = allBCs.OfType<INodalLoadBoundaryCondition>();
+			var validDirichlet = nodalDirichlet.Where(x => nodalNeumann.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false).ToArray();
+			if (precedence == BoundaryConditionPrecedence.NoPrecedence && nodalDirichlet.Length != validDirichlet.Length)
+			{
+				var duplicateLoadNodes = nodalDirichlet.Except(validDirichlet).Select(x => $"({x.Node.ID}, {x.DOF})").Aggregate(String.Empty, (s, n) => s + n + ", ");
+				throw new ArgumentException($"Boundary conditions for both loads/velocities/accelerations and displacements at nodes {duplicateLoadNodes}");
+			}
+
+			return precedence == BoundaryConditionPrecedence.DisplacementPrecedence ? nodalDirichlet : validDirichlet;
+		}
+
+		private IEnumerable<T> GetDirichletInitialConditionsAccordingToPrecedence<T>(INodalInitialCondition<IDofType>[] allBCs)
+			where T : INodalInitialCondition<IStructuralDofType>
+		{
+			var nodalDirichlet = allBCs.OfType<T>().ToArray();
+			var nodalNeumann = allBCs.OfType<INodalLoadBoundaryCondition>();
+			var validDirichlet = nodalDirichlet.Where(x => nodalNeumann.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false).ToArray();
+			if (precedence == BoundaryConditionPrecedence.NoPrecedence && nodalDirichlet.Length != validDirichlet.Length)
+			{
+				var duplicateLoadNodes = nodalDirichlet.Except(validDirichlet).Select(x => $"({x.Node.ID}, {x.DOF})").Aggregate(String.Empty, (s, n) => s + n + ", ");
+				throw new ArgumentException($"Boundary conditions for both loads/velocities/accelerations and displacements at nodes {duplicateLoadNodes}");
+			}
+
+			return precedence == BoundaryConditionPrecedence.DisplacementPrecedence ? nodalDirichlet : validDirichlet;
+		}
+
+		private IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time)
+		{
 			IGlobalVector accelerations = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(id =>
 			{
@@ -140,14 +225,8 @@ namespace MGroup.Constitutive.Structural
 					boundaryCondition.CurrentTime = time;
 				}
 
-				return boundaryConditions
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-					.OfType<INodalAccelerationBoundaryCondition>();
+				return GetNeumannBoundaryConditionsAccordingToPrecedence<INodalAccelerationBoundaryCondition>(boundaryConditions.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id))).ToArray());
 			},
-				accelerations);
-			algebraicModel.AddToGlobalVector(boundaryConditions
-					.SelectMany(x => x.EnumerateDomainBoundaryConditions())
-					.OfType<IDomainAccelerationBoundaryCondition>(),
 				accelerations);
 
 			return accelerations;
@@ -155,12 +234,6 @@ namespace MGroup.Constitutive.Structural
 
 		private IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
-			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
-			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IStructuralDofType>>())
-			{
-				boundaryCondition.CurrentTime = time;
-			}
-
 			IGlobalVector velocities = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(id =>
 			{
@@ -170,14 +243,8 @@ namespace MGroup.Constitutive.Structural
 					boundaryCondition.CurrentTime = time;
 				}
 
-				return boundaryConditions
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-					.OfType<INodalVelocityBoundaryCondition>();
+				return GetNeumannBoundaryConditionsAccordingToPrecedence<INodalVelocityBoundaryCondition>(boundaryConditions.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id))).ToArray());
 			},
-				velocities);
-			algebraicModel.AddToGlobalVector(boundaryConditions
-					.SelectMany(x => x.EnumerateDomainBoundaryConditions())
-					.OfType<IDomainVelocityBoundaryCondition>(),
 				velocities);
 
 			if (time == 0)
@@ -185,9 +252,7 @@ namespace MGroup.Constitutive.Structural
 				algebraicModel.AddToGlobalVector(id =>
 				{
 					var initialConditions = model.EnumerateInitialConditions(id).ToArray();
-					return initialConditions
-						.SelectMany(x => x.EnumerateNodalInitialConditions())
-						.OfType<INodalVelocityInitialCondition>();
+					return GetNeumannInitialConditionsAccordingToPrecedence<INodalVelocityInitialCondition>(initialConditions.SelectMany(x => x.EnumerateNodalInitialConditions(model.EnumerateElements(id))).ToArray());
 				},
 					velocities);
 			}
@@ -203,16 +268,9 @@ namespace MGroup.Constitutive.Structural
 				algebraicModel.AddToGlobalVector(id =>
 				{
 					var initialConditions = model.EnumerateInitialConditions(id).ToArray();
-					return initialConditions
-						.SelectMany(x => x.EnumerateNodalInitialConditions())
-						.OfType<INodalDisplacementInitialCondition>();
+					return GetDirichletInitialConditionsAccordingToPrecedence<INodalDisplacementInitialCondition>(initialConditions.SelectMany(x => x.EnumerateNodalInitialConditions(model.EnumerateElements(id))).ToArray());
 				},
 					displacements);
-
-				algebraicModel.AddToGlobalVector(model.EnumerateInitialConditions(model.EnumerateSubdomains().First().ID)
-					.SelectMany(x => x.EnumerateDomainInitialConditions())
-					.OfType<IDomainDisplacementInitialCondition>(),
-				displacements);
 			}
 
 			return displacements;
@@ -229,16 +287,11 @@ namespace MGroup.Constitutive.Structural
 		public IGlobalVector GetRhs(double time)
 		{
 			IGlobalVector rhs = algebraicModel.CreateZeroVector();
-			algebraicModel.AddToGlobalVector(id =>
-				model.EnumerateBoundaryConditions(id)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-					.OfType<INodalLoadBoundaryCondition>()
-					.Where(x => model.EnumerateBoundaryConditions(id)
-						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-						.OfType<INodalDisplacementBoundaryCondition>()
-						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false),
-				rhs);
 
+			algebraicModel.AddToGlobalVector(id => GetNeumannBoundaryConditionsAccordingToPrecedence<INodalLoadBoundaryCondition>(model.EnumerateBoundaryConditions(id)
+				.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
+				.ToArray()),
+				rhs);
 			algebraicModel.AddToGlobalVector(id =>
 			{
 				var transientBCs = model.EnumerateBoundaryConditions(id).OfType<ITransientBoundaryConditionSet<IStructuralDofType>>().ToArray();
@@ -247,16 +300,9 @@ namespace MGroup.Constitutive.Structural
 					boundaryCondition.CurrentTime = time;
 				}
 
-				return transientBCs
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-					.OfType<INodalLoadBoundaryCondition>()
-					.Where(x => model.EnumerateBoundaryConditions(id)
-						.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-						.OfType<INodalDisplacementBoundaryCondition>()
-						.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
+				return GetNeumannBoundaryConditionsAccordingToPrecedence<INodalLoadBoundaryCondition>(transientBCs.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id))).ToArray());
 			},
 				rhs);
-			//algebraicModel.AddToGlobalVector(EnumerateEquivalentNeumannBoundaryConditions, rhs);
 
 			return rhs;
 		}
@@ -268,8 +314,7 @@ namespace MGroup.Constitutive.Structural
 			if (analysisPhase != TransientAnalysisPhase.InitialConditionEvaluation)
 			{
 				var dirichletBoundaryConditions = algebraicModel.BoundaryConditionsInterpreter.GetDirichletBoundaryConditionsWithNumbering()
-				.Select(x => new NodalBoundaryCondition(x.Value.Node, x.Key.DOF, x.Value.Amount));
-				// First update the state of the elements
+					.Select(x => new NodalBoundaryCondition(x.Value.Node, x.Key.DOF, x.Value.Amount));
 				algebraicModel.DoPerElement<IStructuralElementType>(element =>
 				{
 					double[] elementDisplacements = algebraicModel.ExtractElementVector(solution, element);
@@ -277,7 +322,6 @@ namespace MGroup.Constitutive.Structural
 					element.CalculateResponse(elementDisplacements);
 				});
 
-				// Then calculate the internal rhs vector
 				algebraicModel.AddToGlobalVector(internalRhs, rhsProvider);
 			}
 			else
@@ -380,14 +424,28 @@ namespace MGroup.Constitutive.Structural
 			}
 		}
 
-		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID) =>
-			model.EnumerateBoundaryConditions(subdomainID)
-				.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID)))
-				.OfType<INodalLoadBoundaryCondition>()
-				.Where(x => model.EnumerateBoundaryConditions(subdomainID)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions())
-					.OfType<INodalDisplacementBoundaryCondition>()
-					.Any(d => d.Node.ID == x.Node.ID && d.DOF == x.DOF) == false);
+		public IEnumerable<INodalNeumannBoundaryCondition<IDofType>> EnumerateEquivalentNeumannBoundaryConditions(int subdomainID)
+		{
+			var dirichletBoundaryConditions = model.EnumerateBoundaryConditions(subdomainID)
+				.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID)))
+				.OfType<INodalDisplacementBoundaryCondition>()
+				.ToArray();
+
+			var dofsToExclude = precedence != BoundaryConditionPrecedence.LoadPrecedence
+				? Array.Empty<(int NodeID, IDofType DOF)>()
+				: dirichletBoundaryConditions
+					.Select(x => (x.Node.ID, (IDofType)x.DOF))
+					.Distinct()
+					.ToArray();
+
+			var nodalNeumannBoundaryConditions = model.EnumerateBoundaryConditions(subdomainID)
+					.SelectMany(x => x.EnumerateEquivalentNodalNeumannBoundaryConditions(model.EnumerateElements(subdomainID), dofsToExclude))
+					.Select(x => (INodalBoundaryCondition<IStructuralDofType>)x)
+					.Concat(dirichletBoundaryConditions)
+					.ToArray();
+
+			return GetNeumannBoundaryConditionsAccordingToPrecedence<INodalLoadBoundaryCondition>(nodalNeumannBoundaryConditions, BoundaryConditionPrecedence.DisplacementPrecedence);
+		}
 
 		public double CalculateRhsNorm(IGlobalVector rhs) => rhs.Norm2();
 
@@ -398,16 +456,19 @@ namespace MGroup.Constitutive.Structural
 
 		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering() =>
 			model.EnumerateSubdomains()
-				.SelectMany(x => model.EnumerateBoundaryConditions(x.ID)
-					.SelectMany(x => x.EnumerateNodalBoundaryConditions()).OfType<INodalDisplacementBoundaryCondition>()
+				.Select(x => new Tuple<int, IEnumerable<IBoundaryConditionSet<IDofType>>>(x.ID, model.EnumerateBoundaryConditions(x.ID)))
+					.Select(i => i.Item2
+						.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(i.Item1)))
+						.OfType<INodalDisplacementBoundaryCondition>())
+					.SelectMany(x => x)
 					.OrderBy(x => x.Node.ID)
 					.GroupBy(x => (x.Node.ID, x.DOF))
-					.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount))))
+					.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
 				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
 
 		public IDictionary<(int, IDofType), (int, INode, double)> GetDirichletBoundaryConditionsWithNumbering(int subdomainID) =>
 			model.EnumerateBoundaryConditions(subdomainID)
-				.SelectMany(x => x.EnumerateNodalBoundaryConditions()).OfType<INodalDisplacementBoundaryCondition>()
+				.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(subdomainID))).OfType<INodalDisplacementBoundaryCondition>()
 				.OrderBy(x => x.Node.ID)
 				.GroupBy(x => (x.Node.ID, x.DOF))
 				.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))

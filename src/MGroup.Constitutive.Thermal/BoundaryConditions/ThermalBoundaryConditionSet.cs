@@ -42,7 +42,7 @@ namespace MGroup.Constitutive.Thermal.BoundaryConditions
 			new ThermalBoundaryConditionSet(nodalDirichlet?.Where(x => x.Node.Subdomains.Contains(subdomain.ID)),
 				nodalNeumann?.Where(x => x.Node.Subdomains.Contains(subdomain.ID)), domainDirichlet, domainNeumann);
 
-		public IEnumerable<INodalBoundaryCondition<IThermalDofType>> EnumerateNodalBoundaryConditions() =>
+		public IEnumerable<INodalBoundaryCondition<IThermalDofType>> EnumerateNodalBoundaryConditions(IEnumerable<IElementType> elements) =>
 			nodalDirichlet != null
 			? nodalDirichlet
 				.ToArray<INodalBoundaryCondition<IThermalDofType>>()
@@ -50,15 +50,16 @@ namespace MGroup.Constitutive.Thermal.BoundaryConditions
 				.ToArray()
 			: (nodalNeumann != null ? nodalNeumann.ToArray() : Enumerable.Empty<INodalBoundaryCondition<IThermalDofType>>());
 
-		public IEnumerable<IDomainBoundaryCondition<IThermalDofType>> EnumerateDomainBoundaryConditions() =>
-			domainDirichlet != null
-			? domainDirichlet
-				.ToArray<IDomainBoundaryCondition<IThermalDofType>>()
-				.Concat(domainNeumann != null ? domainNeumann.ToArray<IDomainBoundaryCondition<IThermalDofType>>() : Enumerable.Empty<IDomainBoundaryCondition<IThermalDofType>>())
-				.ToArray()
-			: (domainNeumann != null ? domainNeumann.ToArray() : Enumerable.Empty<IDomainBoundaryCondition<IThermalDofType>>());
+		//public IEnumerable<IDomainBoundaryCondition<IThermalDofType>> EnumerateDomainBoundaryConditions() =>
+		//	domainDirichlet != null
+		//	? domainDirichlet
+		//		.ToArray<IDomainBoundaryCondition<IThermalDofType>>()
+		//		.Concat(domainNeumann != null ? domainNeumann.ToArray<IDomainBoundaryCondition<IThermalDofType>>() : Enumerable.Empty<IDomainBoundaryCondition<IThermalDofType>>())
+		//		.ToArray()
+		//	: (domainNeumann != null ? domainNeumann.ToArray() : Enumerable.Empty<IDomainBoundaryCondition<IThermalDofType>>());
 
-		public IEnumerable<INodalNeumannBoundaryCondition<IThermalDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements)
+		public IEnumerable<INodalNeumannBoundaryCondition<IThermalDofType>> EnumerateEquivalentNodalNeumannBoundaryConditions(IEnumerable<IElementType> elements,
+			IEnumerable<(int NodeID, IDofType DOF)> dofsToExclude)
 		{
 			if (nodalDirichlet == null)
 			{
@@ -66,7 +67,8 @@ namespace MGroup.Constitutive.Thermal.BoundaryConditions
 			}
 
 			var equivalentNodalNeummannBoundaryConditions = new List<INodalHeatFluxBoundaryCondition>();
-			var temperatureBoundaryConditions = nodalDirichlet.OfType<INodalTemperatureBoundaryCondition>();
+			var temperatureBoundaryConditions = nodalDirichlet.OfType<INodalTemperatureBoundaryCondition>()
+				.Where(x => dofsToExclude.Any(d => d.NodeID == x.Node.ID && d.DOF == x.DOF) == false);
 
 			foreach (var element in elements.OfType<IThermalElementType>())
 			{

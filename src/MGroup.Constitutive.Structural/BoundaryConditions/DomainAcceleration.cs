@@ -1,23 +1,32 @@
+using MGroup.MSolve.DataStructures;
 using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.BoundaryConditions;
-using MGroup.MSolve.Discretization.Dofs;
-using MGroup.MSolve.Discretization.Entities;
 
 namespace MGroup.Constitutive.Structural.BoundaryConditions
 {
 	public class DomainAcceleration : IDomainAccelerationBoundaryCondition
 	{
+		private DomainFunction DomainFunction;
+
+		public double Amount(double[] coordinates) => DomainFunction(coordinates);
+
 		public IStructuralDofType DOF { get; }
 
-		public double Amount { get; }
+		public double Multiplier { get; }
 
-		public DomainAcceleration(IStructuralDofType dofType, double amount)
+		public DomainAcceleration(IStructuralDofType dofType, double multiplier, DomainFunction domainFunction)
 		{
 			this.DOF = dofType;
-			this.Amount = amount;
+			this.Multiplier = multiplier;
+			this.DomainFunction = domainFunction;
 		}
 
-		public IDomainBoundaryCondition<IStructuralDofType> WithAmount(double amount) => new DomainAcceleration(DOF, amount);
-		IDomainModelQuantity<IStructuralDofType> IDomainModelQuantity<IStructuralDofType>.WithAmount(double amount) => new DomainAcceleration(DOF, amount);
+		public DomainAcceleration(IStructuralDofType dofType, double multiplier) 
+			: this(dofType, multiplier, c => multiplier)
+		{
+		}
+
+		public IDomainBoundaryCondition<IStructuralDofType> WithMultiplier(double multiplier) => new DomainAcceleration(DOF, multiplier, DomainFunction);
+		IDomainModelQuantity<IStructuralDofType> IDomainModelQuantity<IStructuralDofType>.WithMultiplier(double multiplier) => new DomainAcceleration(DOF, multiplier, DomainFunction);
 	}
 }
