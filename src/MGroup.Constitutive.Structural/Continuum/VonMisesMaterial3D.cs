@@ -8,6 +8,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+
+using MGroup.LinearAlgebra.Implementations;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
@@ -214,7 +216,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 				if (this.constitutiveMatrix == null)
 				{
 					UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
-					this.constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+					this.constitutiveMatrix.MatrixSymmetry = MatrixSymmetry.Symmetric;
 				}
 
 				return constitutiveMatrix;
@@ -406,7 +408,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		private void BuildConsistentTangentialConstitutiveMatrix(double value1)
 		{
 			this.constitutiveMatrix = Matrix.CreateZero(TotalStresses, TotalStrains);
-			this.constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			this.constitutiveMatrix.MatrixSymmetry = MatrixSymmetry.Symmetric;
 			double invariantJ2New = this.GetDeviatorSecondStressInvariant(stressesNew);
 
 			double value2 = (3 * this.shearModulus * this.shearModulus) /

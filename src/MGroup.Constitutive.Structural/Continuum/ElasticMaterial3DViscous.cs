@@ -547,7 +547,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 				if (this.constitutiveMatrix == null)
 				{
 					UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
-					constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+					constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Implementations.MatrixSymmetry.Symmetric;
 				}
 
 				return constitutiveMatrix;

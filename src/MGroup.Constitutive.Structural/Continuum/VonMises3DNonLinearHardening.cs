@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+
+using MGroup.LinearAlgebra.Implementations;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
@@ -187,7 +189,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			var value1 = this.youngModulus / ((1 + this.poissonRatio) * (1 - 2 * this.poissonRatio));
 			var lamda = this.poissonRatio * value1;
 			this.elasticConstitutiveMatrix = Matrix.CreateZero(6, 6);
-			this.elasticConstitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			this.elasticConstitutiveMatrix.MatrixSymmetry = MatrixSymmetry.Symmetric;
 			this.elasticConstitutiveMatrix[0, 0] = value1 * (1 - this.poissonRatio);
 			this.elasticConstitutiveMatrix[0, 1] = lamda;
 			this.elasticConstitutiveMatrix[0, 2] = lamda;
@@ -401,7 +403,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		private Matrix BuildConsistentTangentialConstitutiveMatrix(double vonMisesStress, double[] unityvector)
 		{
 			Matrix consistenttangent = Matrix.CreateZero(TotalStresses, TotalStrains);
-			consistenttangent.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			consistenttangent.MatrixSymmetry = MatrixSymmetry.Symmetric;
 			double dgamma = this.plasticStrainNew - this.plasticStrain;
 			double v1 = -dgamma * 6 * Math.Pow(this.shearModulus, 2) / vonMisesStress;
 			double Hk = GetYieldBackSlopeFromPlasticStrain(this.plasticStrainNew, this.KinematicHardeningCurve);

@@ -178,7 +178,7 @@ namespace MGroup.Constitutive.Structural.Shells
 				}
 
 				var m = Matrix.CreateFromArray(CartesianConstitutiveMatrix);
-				m.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				m.MatrixSymmetry = LinearAlgebra.Implementations.MatrixSymmetry.Symmetric;
 				return m;
 			}
 		}

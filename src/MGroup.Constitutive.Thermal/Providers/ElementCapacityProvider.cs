@@ -9,7 +9,7 @@ namespace MGroup.Constitutive.Thermal.Providers
 		private static Matrix GetSymmetricZero(int count)
 		{
 			var m = LinearAlgebra.Matrices.Matrix.CreateZero(count, count);
-			m.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			m.MatrixSymmetry = LinearAlgebra.Implementations.MatrixSymmetry.Symmetric;
 			return m;
 		}
 
