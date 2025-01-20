@@ -1,6 +1,6 @@
 using System;
 using MGroup.LinearAlgebra.Matrices;
-using MGroup.LinearAlgebra.Providers;
+using MGroup.LinearAlgebra.Implementations;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
 

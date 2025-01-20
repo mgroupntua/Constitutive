@@ -1,4 +1,6 @@
 using System;
+
+using MGroup.LinearAlgebra.Implementations;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
@@ -80,7 +82,7 @@ namespace MGroup.Constitutive.Structural.Shells
 				},
 			});
 			constitutiveMatrix.ScaleIntoThis(YoungModulus/(1-Math.Pow(PoissonRatio,2)));
-			constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			constitutiveMatrix.MatrixSymmetry = MatrixSymmetry.Symmetric;
 			CartesianConstitutiveMatrix = constitutiveMatrix;
 		}
 
@@ -101,7 +103,7 @@ namespace MGroup.Constitutive.Structural.Shells
 				if (CartesianConstitutiveMatrix == null)
 				{
 					UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
-					CartesianConstitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+					CartesianConstitutiveMatrix.MatrixSymmetry = MatrixSymmetry.Symmetric;
 				}
 
 				return CartesianConstitutiveMatrix;

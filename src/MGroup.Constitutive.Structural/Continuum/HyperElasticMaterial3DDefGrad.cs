@@ -1,4 +1,6 @@
 using System;
+
+using MGroup.LinearAlgebra.Implementations;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.Constitutive;
@@ -40,7 +42,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 				if (constitutiveMatrix == null)
 				{
 					UpdateConstitutiveMatrixAndEvaluateResponse(new double[9] { 1, 1, 1, 0, 0, 0, 0, 0, 0 });
-					constitutiveMatrix.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+					constitutiveMatrix.MatrixSymmetry = MatrixSymmetry.Symmetric;
 				}
 
 				return constitutiveMatrix;
@@ -108,7 +110,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 
 			//einai to Cklrs_pavla_vec
 			var Cons = C1 * J_1_stst + C2 * J_2_stst + K_cons * (J_3_st_vec.TensorProduct(J_3_st_vec) + (J_3 - 1) * J_3_stst);
-			Cons.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			Cons.MatrixSymmetry = MatrixSymmetry.Symmetric;
 
 			stresses = Spk_vec.Copy();
 			constitutiveMatrix = Cons;

@@ -165,7 +165,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			get
 			{
 				var m = Matrix.CreateFromArray(constitutiveMatrix);
-				m.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				m.MatrixSymmetry = LinearAlgebra.Implementations.MatrixSymmetry.Symmetric;
 				return m;
 			}
 		}
