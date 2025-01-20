@@ -1,4 +1,6 @@
 using System;
+
+using MGroup.LinearAlgebra.Implementations;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
@@ -74,7 +76,7 @@ namespace MGroup.Constitutive.Structural.Shells
 				if (ConsCartes == null)
 				{
 					UpdateConstitutiveMatrixAndEvaluateResponse(new double[6]);
-					ConsCartes.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+					ConsCartes.MatrixSymmetry = MatrixSymmetry.Symmetric;
 				}
 
 				return ConsCartes;
@@ -115,7 +117,7 @@ namespace MGroup.Constitutive.Structural.Shells
 			double E = YoungModulus;
 			double ni = PoissonRatio;
 			ConsCartes = Matrix.CreateZero(6, 6);
-			ConsCartes.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+			ConsCartes.MatrixSymmetry = MatrixSymmetry.Symmetric;
 			double[,] Cons = new double[6, 6];
 			double[,] Cons_T_e = new double[6, 6];
 			double[] V2 = new double[3];

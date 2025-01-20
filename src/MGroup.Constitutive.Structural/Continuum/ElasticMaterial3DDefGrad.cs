@@ -97,7 +97,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 				}
 
 				var c = Matrix.CreateFromArray(constitutiveMatrix);
-				c.MatrixSymmetry = LinearAlgebra.Providers.MatrixSymmetry.Symmetric;
+				c.MatrixSymmetry = LinearAlgebra.Implementations.MatrixSymmetry.Symmetric;
 				return c;
 			}
 		}
