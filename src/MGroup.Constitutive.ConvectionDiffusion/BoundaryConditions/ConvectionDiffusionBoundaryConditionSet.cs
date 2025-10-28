@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using MGroup.LinearAlgebra.Extensions;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.BoundaryConditions;

@@ -1,5 +1,6 @@
 using System;
 
+using MGroup.LinearAlgebra.Extensions;
 using MGroup.LinearAlgebra.Implementations;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Constitutive;

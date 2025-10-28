@@ -1,23 +1,22 @@
 #pragma warning disable SA1116 // Split parameters should start on line after declaration
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using MGroup.Constitutive.Structural.BoundaryConditions;
 using MGroup.Constitutive.Structural.Providers;
 using MGroup.Constitutive.Structural.InitialConditions;
+using MGroup.LinearAlgebra.Matrices;
+using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.AnalysisWorkflow.Providers;
 using MGroup.MSolve.AnalysisWorkflow.Transient;
 using MGroup.MSolve.Discretization.BoundaryConditions;
 using MGroup.MSolve.Discretization.Dofs;
 using MGroup.MSolve.Discretization.Entities;
 using MGroup.MSolve.Solution.AlgebraicModel;
-using MGroup.MSolve.Solution.LinearSystem;
 using MGroup.MSolve.DataStructures;
 using MGroup.MSolve.Discretization;
-using MGroup.MSolve.Discretization.Providers;
-using System.Net.Sockets;
-using System;
-using System.Diagnostics;
 
 namespace MGroup.Constitutive.Structural
 {
@@ -47,7 +46,7 @@ namespace MGroup.Constitutive.Structural
 		private readonly ElementStructuralInternalForcesProvider rhsProvider = new ElementStructuralInternalForcesProvider();
 		private readonly IElementMatrixPredicate rebuildStiffnessPredicate = new MaterialModifiedElementMarixPredicate();
 		private readonly BoundaryConditionPrecedence precedence;
-		private IGlobalMatrix mass, damping, stiffness;
+		private IMatrix mass, damping, stiffness;
 		private TransientAnalysisPhase analysisPhase = TransientAnalysisPhase.SteadyStateSolution;
 
 		public ProblemStructural(IModel model, IAlgebraicModel algebraicModel, BoundaryConditionPrecedence precedence)
@@ -70,7 +69,7 @@ namespace MGroup.Constitutive.Structural
 		{
 		}
 
-		private IGlobalMatrix Mass
+		private IMatrix Mass
 		{
 			get
 			{
@@ -79,7 +78,7 @@ namespace MGroup.Constitutive.Structural
 			}
 		}
 
-		private IGlobalMatrix Damping
+		private IMatrix Damping
 		{
 			get
 			{
@@ -88,7 +87,7 @@ namespace MGroup.Constitutive.Structural
 			}
 		}
 
-		private IGlobalMatrix Stiffness
+		private IMatrix Stiffness
 		{
 			get
 			{
@@ -143,7 +142,7 @@ namespace MGroup.Constitutive.Structural
 			mass = null;
 		}
 
-		public IGlobalMatrix GetMatrix(DifferentiationOrder differentiationOrder) => differentiationOrder switch
+		public IMatrix GetMatrix(DifferentiationOrder differentiationOrder) => differentiationOrder switch
 		{
 			DifferentiationOrder.Zero => Stiffness,
 			DifferentiationOrder.First => Damping,
@@ -214,9 +213,9 @@ namespace MGroup.Constitutive.Structural
 			return precedence == BoundaryConditionPrecedence.DisplacementPrecedence ? nodalDirichlet : validDirichlet;
 		}
 
-		private IGlobalVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time)
+		private IVector GetSecondOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
-			IGlobalVector accelerations = algebraicModel.CreateZeroVector();
+			IVector accelerations = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(id =>
 			{
 				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
@@ -232,9 +231,9 @@ namespace MGroup.Constitutive.Structural
 			return accelerations;
 		}
 
-		private IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
+		private IVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
-			IGlobalVector velocities = algebraicModel.CreateZeroVector();
+			IVector velocities = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(id =>
 			{
 				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
@@ -260,9 +259,9 @@ namespace MGroup.Constitutive.Structural
 			return velocities;
 		}
 
-		private IGlobalVector GetZeroOrderDerivativeVectorFromInitialConditions(double time)
+		private IVector GetZeroOrderDerivativeVectorFromInitialConditions(double time)
 		{
-			IGlobalVector displacements = algebraicModel.CreateZeroVector();
+			IVector displacements = algebraicModel.CreateZeroVector();
 			if (time == 0)
 			{
 				algebraicModel.AddToGlobalVector(id =>
@@ -276,7 +275,7 @@ namespace MGroup.Constitutive.Structural
 			return displacements;
 		}
 
-		public IGlobalVector GetVectorFromModelConditions(DifferentiationOrder differentiationOrder, double time) => differentiationOrder switch
+		public IVector GetVectorFromModelConditions(DifferentiationOrder differentiationOrder, double time) => differentiationOrder switch
 		{
 			DifferentiationOrder.Zero => GetZeroOrderDerivativeVectorFromInitialConditions(time),
 			DifferentiationOrder.First => GetFirstOrderDerivativeVectorFromBoundaryConditions(time),
@@ -284,9 +283,9 @@ namespace MGroup.Constitutive.Structural
 			_ => algebraicModel.CreateZeroVector(),
 		};
 
-		public IGlobalVector GetRhs(double time)
+		public IVector GetRhs(double time)
 		{
-			IGlobalVector rhs = algebraicModel.CreateZeroVector();
+			IVector rhs = algebraicModel.CreateZeroVector();
 
 			algebraicModel.AddToGlobalVector(id => GetNeumannBoundaryConditionsAccordingToPrecedence<INodalLoadBoundaryCondition>(model.EnumerateBoundaryConditions(id)
 				.SelectMany(x => x.EnumerateNodalBoundaryConditions(model.EnumerateElements(id)))
@@ -308,9 +307,9 @@ namespace MGroup.Constitutive.Structural
 		}
 
 		//TODO: I suggest splitting this into 2 methods. One for updating the elements/materials and one for calculating the internal rhs
-		public IGlobalVector CalculateResponseIntegralVector(IGlobalVector solution)
+		public IVector CalculateResponseIntegralVector(IVector solution)
 		{
-			IGlobalVector internalRhs = algebraicModel.CreateZeroVector();
+			IVector internalRhs = algebraicModel.CreateZeroVector();
 			if (analysisPhase != TransientAnalysisPhase.InitialConditionEvaluation)
 			{
 				var dirichletBoundaryConditions = algebraicModel.BoundaryConditionsInterpreter.GetDirichletBoundaryConditionsWithNumbering()
@@ -326,7 +325,7 @@ namespace MGroup.Constitutive.Structural
 			}
 			else
 			{
-				Mass.MultiplyVector(solution, internalRhs);
+				Mass.MultiplyIntoResult(solution, internalRhs);
 			}
 
 			return internalRhs;
@@ -343,7 +342,7 @@ namespace MGroup.Constitutive.Structural
 			}
 		}
 
-		public IGlobalVector GetRHSFromSolutionWithInitialDisplacemntsEffect(IGlobalVector solution, Dictionary<int, INode> boundaryNodes,
+		public IVector GetRHSFromSolutionWithInitialDisplacemntsEffect(IVector solution, Dictionary<int, INode> boundaryNodes,
 			Dictionary<int, Dictionary<IDofType, double>> initialConvergedBoundaryDisplacements, Dictionary<int, Dictionary<IDofType, double>> totalBoundaryDisplacements,
 			int nIncrement, int totalIncrements)
 		{
@@ -356,7 +355,7 @@ namespace MGroup.Constitutive.Structural
 			});
 
 			// Then calculate the internal rhs vector
-			IGlobalVector internalRhs = algebraicModel.CreateZeroVector();
+			IVector internalRhs = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(internalRhs, rhsProvider);
 			return internalRhs;
 		}
@@ -447,9 +446,9 @@ namespace MGroup.Constitutive.Structural
 			return GetNeumannBoundaryConditionsAccordingToPrecedence<INodalLoadBoundaryCondition>(nodalNeumannBoundaryConditions, BoundaryConditionPrecedence.DisplacementPrecedence);
 		}
 
-		public double CalculateRhsNorm(IGlobalVector rhs) => rhs.Norm2();
+		public double CalculateRhsNorm(IVector rhs) => rhs.Norm2();
 
-		public void ProcessInternalRhs(IGlobalVector solution, IGlobalVector rhs) 
+		public void ProcessInternalRhs(IVector solution, IVector rhs) 
 		{
 			// Method intentionally left blank
 		}
@@ -474,8 +473,8 @@ namespace MGroup.Constitutive.Structural
 				.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
 				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
 
-		public IGlobalVector GetRhs() => GetRhs(0);
+		public IVector GetRhs() => GetRhs(0);
 
-		public IGlobalMatrix GetMatrix() => GetMatrix(DifferentiationOrder.Zero);
+		public IMatrix GetMatrix() => GetMatrix(DifferentiationOrder.Zero);
 	}
 }

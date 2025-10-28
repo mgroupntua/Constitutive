@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using MGroup.LinearAlgebra.Extensions;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Discretization;
 using MGroup.MSolve.Discretization.BoundaryConditions;
