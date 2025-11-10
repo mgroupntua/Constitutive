@@ -7,6 +7,7 @@ using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
 using MGroup.LinearAlgebra.Implementations;
+using MGroup.LinearAlgebra.Extensions;
 
 namespace MGroup.Constitutive.Structural.Continuum
 {

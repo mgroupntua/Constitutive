@@ -8,6 +8,8 @@
 
 
 using System;
+
+using MGroup.LinearAlgebra.Extensions;
 using MGroup.LinearAlgebra.Matrices;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;

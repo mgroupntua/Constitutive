@@ -3,6 +3,7 @@ using MGroup.LinearAlgebra.Matrices;
 using MGroup.LinearAlgebra.Implementations;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
+using MGroup.LinearAlgebra.Extensions;
 
 namespace MGroup.Constitutive.Structural.Continuum
 {

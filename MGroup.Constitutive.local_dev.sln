@@ -1,0 +1,79 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32414.318
+MinimumVisualStudioVersion = 10.0.40219.1
+
+# ------------------------
+# Local Dev Solution File
+# ------------------------
+# This solution includes external repo dependencies as project references. It is for cross-repo development.
+# DO NOT use it for publishing or CI/CD.
+# DO NOT COMMIT new code under "dependencies". They are read-only links.
+# It includes local project references to the projects:
+# - MGroup.LinearAlgebra
+# - MGroup.MSolve.Core
+# -------------------------------------------------------------
+
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{605A2168-9218-4992-92C3-F59D9D268834}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MGroup.Constitutive.Structural", "src\MGroup.Constitutive.Structural\MGroup.Constitutive.Structural.csproj", "{B421F18B-52D8-4C0C-807C-7D54B2660202}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MGroup.Constitutive.Thermal", "src\MGroup.Constitutive.Thermal\MGroup.Constitutive.Thermal.csproj", "{2F4E2103-DAB3-4C5B-AFAD-1307A519BF0A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MGroup.Constitutive.PorousMedia", "src\MGroup.Constitutive.PorousMedia\MGroup.Constitutive.PorousMedia.csproj", "{7C73582A-0316-4857-AC20-A7A9477D84B3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MGroup.Constitutive.ConvectionDiffusion", "src\MGroup.Constitutive.ConvectionDiffusion\MGroup.Constitutive.ConvectionDiffusion.csproj", "{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "depend", "depend", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGroup.MSolve.Core", "..\MSolve.Core\src\MGroup.MSolve.Core.csproj", "{C16E706B-1CA9-A15F-7294-2E62EA29BFFA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGroup.LinearAlgebra", "..\LinearAlgebra\src\MGroup.LinearAlgebra\MGroup.LinearAlgebra.csproj", "{9D0A0491-A30C-FE69-3BD7-83F3CCC49BCB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B421F18B-52D8-4C0C-807C-7D54B2660202}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B421F18B-52D8-4C0C-807C-7D54B2660202}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B421F18B-52D8-4C0C-807C-7D54B2660202}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B421F18B-52D8-4C0C-807C-7D54B2660202}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F4E2103-DAB3-4C5B-AFAD-1307A519BF0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F4E2103-DAB3-4C5B-AFAD-1307A519BF0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F4E2103-DAB3-4C5B-AFAD-1307A519BF0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F4E2103-DAB3-4C5B-AFAD-1307A519BF0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C73582A-0316-4857-AC20-A7A9477D84B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C73582A-0316-4857-AC20-A7A9477D84B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C73582A-0316-4857-AC20-A7A9477D84B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C73582A-0316-4857-AC20-A7A9477D84B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C16E706B-1CA9-A15F-7294-2E62EA29BFFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C16E706B-1CA9-A15F-7294-2E62EA29BFFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C16E706B-1CA9-A15F-7294-2E62EA29BFFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C16E706B-1CA9-A15F-7294-2E62EA29BFFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D0A0491-A30C-FE69-3BD7-83F3CCC49BCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D0A0491-A30C-FE69-3BD7-83F3CCC49BCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D0A0491-A30C-FE69-3BD7-83F3CCC49BCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D0A0491-A30C-FE69-3BD7-83F3CCC49BCB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B421F18B-52D8-4C0C-807C-7D54B2660202} = {605A2168-9218-4992-92C3-F59D9D268834}
+		{2F4E2103-DAB3-4C5B-AFAD-1307A519BF0A} = {605A2168-9218-4992-92C3-F59D9D268834}
+		{7C73582A-0316-4857-AC20-A7A9477D84B3} = {605A2168-9218-4992-92C3-F59D9D268834}
+		{8E3F1AE0-E6DC-40AB-89D8-FBE1C185A107} = {605A2168-9218-4992-92C3-F59D9D268834}
+		{C16E706B-1CA9-A15F-7294-2E62EA29BFFA} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{9D0A0491-A30C-FE69-3BD7-83F3CCC49BCB} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AA335BA1-EE20-45AD-AE66-B0408B577C10}
+	EndGlobalSection
+EndGlobal

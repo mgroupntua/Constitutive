@@ -1,17 +1,19 @@
-using System.Linq;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+
 using MGroup.Constitutive.ConvectionDiffusion.BoundaryConditions;
 using MGroup.Constitutive.ConvectionDiffusion.InitialConditions;
 using MGroup.Constitutive.ConvectionDiffusion.Providers;
+using MGroup.LinearAlgebra.Matrices;
+using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.AnalysisWorkflow.Providers;
 using MGroup.MSolve.AnalysisWorkflow.Transient;
 using MGroup.MSolve.Discretization.BoundaryConditions;
 using MGroup.MSolve.Discretization.Dofs;
 using MGroup.MSolve.Discretization.Entities;
 using MGroup.MSolve.Solution.AlgebraicModel;
-using MGroup.MSolve.Solution.LinearSystem;
 using MGroup.MSolve.DataStructures;
-using System;
 
 namespace MGroup.Constitutive.ConvectionDiffusion
 {
@@ -43,7 +45,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		private readonly ElementCapacityMatrixProvider fistTimeDerivativeMatrixProvider = new ElementCapacityMatrixProvider();
 		private readonly IElementMatrixPredicate rebuildDiffusionPredicate = new MaterialModifiedElementMarixPredicate();
 		private readonly BoundaryConditionPrecedence precedence;
-		private IGlobalMatrix convection, diffusion, production, capacityMatrix;
+		private IMatrix convection, diffusion, production, capacityMatrix;
 		private TransientAnalysisPhase analysisPhase = TransientAnalysisPhase.SteadyStateSolution;
 
 		public ProblemConvectionDiffusion(IModel model, IAlgebraicModel algebraicModel, BoundaryConditionPrecedence precedence)
@@ -61,7 +63,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		{
 		}
 
-		private IGlobalMatrix Convection
+		private IMatrix Convection
 		{
 			get
 			{
@@ -70,7 +72,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			}
 		}
 
-		private IGlobalMatrix Diffusion
+		private IMatrix Diffusion
 		{
 			get
 			{
@@ -79,7 +81,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			}
 		}
 
-		private IGlobalMatrix Production
+		private IMatrix Production
 		{
 			get
 			{
@@ -88,7 +90,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			}
 		}
 
-		private IGlobalMatrix CapacityMatrix
+		private IMatrix CapacityMatrix
 		{
 			get
 			{
@@ -122,16 +124,16 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			capacityMatrix = null;
 		}
 
-		public IGlobalMatrix GetMatrix()
+		public IMatrix GetMatrix()
 		{
-			IGlobalMatrix matrix = Diffusion.Copy();
+			IMatrix matrix = Diffusion.Copy();
 			matrix.AddIntoThis(Convection);
 			matrix.AddIntoThis(Production);
 
 			return matrix;
 		}
 
-		public IGlobalMatrix GetMatrix(DifferentiationOrder differentiationOrder) => differentiationOrder switch
+		public IMatrix GetMatrix(DifferentiationOrder differentiationOrder) => differentiationOrder switch
 		{
 			DifferentiationOrder.Zero => GetMatrix(),
 			DifferentiationOrder.First => CapacityMatrix,
@@ -201,7 +203,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			return precedence == BoundaryConditionPrecedence.UnknownVariablePrecedence ? nodalDirichlet : validDirichlet;
 		}
 
-		private IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
+		private IVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
 			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
 			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IConvectionDiffusionDofType>>())
@@ -209,7 +211,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 				boundaryCondition.CurrentTime = time;
 			}
 
-			IGlobalVector capacities = algebraicModel.CreateZeroVector();
+			IVector capacities = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(id =>
 			{
 				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
@@ -229,9 +231,9 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			return capacities;
 		}
 
-		private IGlobalVector GetZeroOrderDerivativeVectorFromInitialConditions(double time)
+		private IVector GetZeroOrderDerivativeVectorFromInitialConditions(double time)
 		{
-			IGlobalVector unknownVariables = algebraicModel.CreateZeroVector();
+			IVector unknownVariables = algebraicModel.CreateZeroVector();
 
 			if (time == 0)
 			{
@@ -249,14 +251,14 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			return unknownVariables;
 		}
 
-		public IGlobalVector GetVectorFromModelConditions(DifferentiationOrder differentiationOrder, double time) => differentiationOrder switch
+		public IVector GetVectorFromModelConditions(DifferentiationOrder differentiationOrder, double time) => differentiationOrder switch
 		{
 			DifferentiationOrder.Zero => GetZeroOrderDerivativeVectorFromInitialConditions(time),
 			DifferentiationOrder.First => GetFirstOrderDerivativeVectorFromBoundaryConditions(time),
 			_ => algebraicModel.CreateZeroVector(),
 		};
 
-		public IGlobalVector GetRhs(double time)
+		public IVector GetRhs(double time)
 		{
 			var rhs = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(rhs, independentProductionProvider);
@@ -297,16 +299,16 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			return rhs;
 		}
 
-		public double CalculateRhsNorm(IGlobalVector rhs) => rhs.Norm2();
+		public double CalculateRhsNorm(IVector rhs) => rhs.Norm2();
 
-		public void ProcessInternalRhs(IGlobalVector solution, IGlobalVector rhs) 
+		public void ProcessInternalRhs(IVector solution, IVector rhs) 
 		{
 			// Method intentionally left blank
 		}
 
-		public IGlobalVector CalculateResponseIntegralVector(IGlobalVector solution)
+		public IVector CalculateResponseIntegralVector(IVector solution)
 		{
-			IGlobalVector internalRhs = algebraicModel.CreateZeroVector();
+			IVector internalRhs = algebraicModel.CreateZeroVector();
 			if (analysisPhase != TransientAnalysisPhase.InitialConditionEvaluation)
 			{
 				var dirichletBoundaryConditions = algebraicModel.BoundaryConditionsInterpreter.GetDirichletBoundaryConditionsWithNumbering()
@@ -324,7 +326,7 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 			}
 			else
 			{
-				CapacityMatrix.MultiplyVector(solution, internalRhs);
+				CapacityMatrix.MultiplyIntoResult(solution, internalRhs);
 			}
 
 			return internalRhs;
@@ -411,6 +413,6 @@ namespace MGroup.Constitutive.ConvectionDiffusion
 		//	.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
 		//	.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
 
-		public IGlobalVector GetRhs() => GetRhs(0);
+		public IVector GetRhs() => GetRhs(0);
 	}
 }

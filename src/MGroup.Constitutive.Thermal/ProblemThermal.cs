@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using MGroup.Constitutive.Thermal.BoundaryConditions;
 using MGroup.Constitutive.Thermal.InitialConditions;
 using MGroup.Constitutive.Thermal.Providers;
+using MGroup.LinearAlgebra.Matrices;
+using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.AnalysisWorkflow.Providers;
 using MGroup.MSolve.AnalysisWorkflow.Transient;
 using MGroup.MSolve.DataStructures;
@@ -11,7 +14,6 @@ using MGroup.MSolve.Discretization.BoundaryConditions;
 using MGroup.MSolve.Discretization.Dofs;
 using MGroup.MSolve.Discretization.Entities;
 using MGroup.MSolve.Solution.AlgebraicModel;
-using MGroup.MSolve.Solution.LinearSystem;
 
 //TODO: I am not too fond of the provider storing global sized matrices.
 namespace MGroup.Constitutive.Thermal
@@ -23,7 +25,7 @@ namespace MGroup.Constitutive.Thermal
 		private readonly ElementConductivityProvider conductivityProvider = new ElementConductivityProvider();
 		private readonly ElementCapacityProvider capacityProvider = new ElementCapacityProvider();
 		private readonly IElementMatrixPredicate rebuildConductivityPredicate = new MaterialModifiedElementMarixPredicate();
-		private IGlobalMatrix capacity, conductivity;
+		private IMatrix capacity, conductivity;
 		private TransientAnalysisPhase analysisPhase = TransientAnalysisPhase.SteadyStateSolution;
 
 		public ProblemThermal(IModel model, IAlgebraicModel algebraicModel)
@@ -35,7 +37,7 @@ namespace MGroup.Constitutive.Thermal
 			ActiveDofs.AddDof(ThermalDof.Temperature);
 		}
 
-		private IGlobalMatrix Capacity
+		private IMatrix Capacity
 		{
 			get
 			{
@@ -44,7 +46,7 @@ namespace MGroup.Constitutive.Thermal
 			}
 		}
 
-		private IGlobalMatrix Conductivity
+		private IMatrix Conductivity
 		{
 			get
 			{
@@ -73,14 +75,14 @@ namespace MGroup.Constitutive.Thermal
 			capacity = null;
 		}
 
-		public IGlobalMatrix GetMatrix(DifferentiationOrder differentiationOrder) => differentiationOrder switch
+		public IMatrix GetMatrix(DifferentiationOrder differentiationOrder) => differentiationOrder switch
 		{
 			DifferentiationOrder.Zero => Conductivity,
 			DifferentiationOrder.First => Capacity,
 			_ => algebraicModel.CreateEmptyMatrix(),
 		};
 
-		private IGlobalVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
+		private IVector GetFirstOrderDerivativeVectorFromBoundaryConditions(double time)
 		{
 			var boundaryConditions = model.EnumerateBoundaryConditions(model.EnumerateSubdomains().First().ID).ToArray();
 			foreach (var boundaryCondition in boundaryConditions.OfType<ITransientBoundaryConditionSet<IThermalDofType>>())
@@ -88,7 +90,7 @@ namespace MGroup.Constitutive.Thermal
 				boundaryCondition.CurrentTime = time;
 			}
 
-			IGlobalVector temperatureDerivatives = algebraicModel.CreateZeroVector();
+			IVector temperatureDerivatives = algebraicModel.CreateZeroVector();
 			algebraicModel.AddToGlobalVector(id =>
 			{
 				var boundaryConditions = model.EnumerateBoundaryConditions(id).ToArray();
@@ -111,9 +113,9 @@ namespace MGroup.Constitutive.Thermal
 			return temperatureDerivatives;
 		}
 
-		private IGlobalVector GetZeroOrderDerivativeVectorFromInitialConditions(double time)
+		private IVector GetZeroOrderDerivativeVectorFromInitialConditions(double time)
 		{
-			IGlobalVector temperatures = algebraicModel.CreateZeroVector();
+			IVector temperatures = algebraicModel.CreateZeroVector();
 
 			if (time == 0)
 			{
@@ -136,16 +138,16 @@ namespace MGroup.Constitutive.Thermal
 			return temperatures;
 		}
 
-		public IGlobalVector GetVectorFromModelConditions(DifferentiationOrder differentiationOrder, double time) => differentiationOrder switch
+		public IVector GetVectorFromModelConditions(DifferentiationOrder differentiationOrder, double time) => differentiationOrder switch
 		{
 			DifferentiationOrder.Zero => GetZeroOrderDerivativeVectorFromInitialConditions(time),
 			DifferentiationOrder.First => GetFirstOrderDerivativeVectorFromBoundaryConditions(time),
 			_ => algebraicModel.CreateZeroVector(),
 		};
 
-		public IGlobalVector GetRhs(double time)
+		public IVector GetRhs(double time)
 		{
-			IGlobalVector rhs = algebraicModel.CreateZeroVector();
+			IVector rhs = algebraicModel.CreateZeroVector();
 
 			algebraicModel.AddToGlobalVector(id =>
 				model.EnumerateBoundaryConditions(id)
@@ -178,14 +180,14 @@ namespace MGroup.Constitutive.Thermal
 			return rhs;
 		}
 
-		public double CalculateRhsNorm(IGlobalVector rhs) => rhs.Norm2();
+		public double CalculateRhsNorm(IVector rhs) => rhs.Norm2();
 
-		public void ProcessInternalRhs(IGlobalVector solution, IGlobalVector rhs) 
+		public void ProcessInternalRhs(IVector solution, IVector rhs) 
 		{
 			// Method intentionally left blank
 		}
 
-		public IGlobalVector CalculateResponseIntegralVector(IGlobalVector solution)
+		public IVector CalculateResponseIntegralVector(IVector solution)
 		{
 			throw new NotImplementedException();
 		}
@@ -224,8 +226,8 @@ namespace MGroup.Constitutive.Thermal
 				.Select((x, Index) => (x.First().Node, (IDofType)x.Key.DOF, Index, x.Sum(a => a.Amount)))
 				.ToDictionary(x => (x.Node.ID, x.Item2), x => (x.Index, x.Node, x.Item4));
 
-		public IGlobalMatrix GetMatrix() => GetMatrix(DifferentiationOrder.Zero);
+		public IMatrix GetMatrix() => GetMatrix(DifferentiationOrder.Zero);
 
-		public IGlobalVector GetRhs() => GetRhs(0);
+		public IVector GetRhs() => GetRhs(0);
 	}
 }

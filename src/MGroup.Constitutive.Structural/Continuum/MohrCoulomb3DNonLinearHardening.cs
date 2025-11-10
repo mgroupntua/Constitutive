@@ -5,6 +5,7 @@ using MGroup.LinearAlgebra.Matrices;
 using MGroup.LinearAlgebra.Vectors;
 using MGroup.MSolve.Constitutive;
 using MGroup.MSolve.DataStructures;
+using MGroup.LinearAlgebra.Extensions;
 
 // CONSTITUTIVE MATRIX IS ASSUMED TO BE SYMMETRIC - PLEASE CHECK
 namespace MGroup.Constitutive.Structural.Continuum
