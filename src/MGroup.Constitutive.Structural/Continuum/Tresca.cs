@@ -30,12 +30,12 @@ namespace MGroup.Constitutive.Structural.Continuum
 		public double[,] IsotropicHardeningCurve;
 		public double[,] KinematicHardeningCurve;
 		private Matrix PrConstMatr = Matrix.CreateFromArray(new double[6, 6]);
-		public IMatrixView PrincipalStressConstitutiveMatrix { get; set; }
+		public IReadOnlyMatrix PrincipalStressConstitutiveMatrix { get; set; }
 		public Matrix Rotation = Matrix.CreateFromArray(new double[6, 6]);
 		public int npoi;
 		public double tolerance = Math.Pow(10, -8);
 		bool validitytomainplane = true;
-		public IMatrixView ConstitutiveMatrix
+		public IReadOnlyMatrix ConstitutiveMatrix
 		{
 			get
 			{
@@ -241,7 +241,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		}
 		#endregion
 		#region DecideLoad
-		public void DecideLoad(double[] de, double[] Stresses, IMatrixView ConstitutiveMatrix)
+		public void DecideLoad(double[] de, double[] Stresses, IReadOnlyMatrix ConstitutiveMatrix)
 		{
 			Stressestrial = compds(de, Stresses);
 			double[] deviatoricpart = GetStressDeviator(Stressestrial);

@@ -210,7 +210,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// <value>
 		///   The constitutive matrix.
 		/// </value>
-		public IMatrixView ConstitutiveMatrix
+		public IReadOnlyMatrix ConstitutiveMatrix
 		{
 			get
 			{
