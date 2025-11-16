@@ -69,7 +69,7 @@ namespace MGroup.Constitutive.Structural.Shells
 			get { return SPKvec; }
 		}
 
-		public IMatrixView ConstitutiveMatrix
+		public IReadOnlyMatrix ConstitutiveMatrix
 		{
 			get
 			{

@@ -168,7 +168,7 @@ namespace MGroup.Constitutive.Structural.Shells
 			get { return CartesianStresses; }
 		}
 
-		public IMatrixView ConstitutiveMatrix
+		public IReadOnlyMatrix ConstitutiveMatrix
 		{
 			get
 			{

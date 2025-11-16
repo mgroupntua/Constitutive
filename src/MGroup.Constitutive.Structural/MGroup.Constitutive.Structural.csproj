@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(UseLocalMSolveProjects)' == 'false'">
-    <PackageReference Include="MGroup.MSolve.Core" Version="0.2.0-unstable.103" />
+    <PackageReference Include="MGroup.MSolve.Core" Version="0.2.0-unstable.109" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(UseLocalMSolveProjects)' == 'true'">
