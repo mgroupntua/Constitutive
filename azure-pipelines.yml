@@ -17,7 +17,7 @@ pool:
 variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Debug'
-  enableSonarCloud: false
+  enableSonarCloud: true
 
 steps:
 - task: PowerShell@2
@@ -202,8 +202,6 @@ steps:
     command: 'pack'
     arguments: '--nologo --no-restore'
     nobuild: true
-#    includesymbols: true
-#    includesource: true
     versioningScheme: 'byEnvVar'
     versionEnvVar: 'GitVersion.SemVer'
     verbosityPack: 'Normal'

@@ -36,7 +36,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		/// <summary>
 		/// Returns the constitutive matrix of the material for the current strain state
 		/// </summary>
-		public IMatrixView ConstitutiveMatrix
+		public IReadOnlyMatrix ConstitutiveMatrix
 		{
 			get
 			{

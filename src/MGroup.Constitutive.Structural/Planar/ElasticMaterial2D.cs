@@ -50,7 +50,7 @@ namespace MGroup.Constitutive.Structural.Planar
 		/// <summary>
 		/// Returns the constitutive matrix of the material for the current strain state
 		/// </summary>
-		public IMatrixView ConstitutiveMatrix
+		public IReadOnlyMatrix ConstitutiveMatrix
 		{
 			get
 			{

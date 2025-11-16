@@ -45,7 +45,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		bool validitytomainplane = true;
 		bool validitytoedges = true;
 		public Matrix Rotation = Matrix.CreateFromArray(new double[6, 6]);
-		public IMatrixView PrincipalStressConstitutiveMatrix { get; set; }
+		public IReadOnlyMatrix PrincipalStressConstitutiveMatrix { get; set; }
 		public MohrCoulomb3DNonLinearHardening(double youngModulus, double poissonRatio, double cohesion, double friction, double dilation)
 		{
 			this.tempstresses = new double[6];
@@ -85,7 +85,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			this.PrincipalVectors = Matrix.CreateFromArray(new double[3, 3]);
 		}
 
-		public IMatrixView ConstitutiveMatrix
+		public IReadOnlyMatrix ConstitutiveMatrix
 		{
 			get
 			{
@@ -271,7 +271,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			Matrix check = final - final.Transpose();
 			return final;
 		}
-		public void CalculateNextStressStrainPoint(double[] de, double[] Stresses, IMatrixView ConstitutiveMatrix)
+		public void CalculateNextStressStrainPoint(double[] de, double[] Stresses, IReadOnlyMatrix ConstitutiveMatrix)
 		{
 			Stressestrial = compds(de, Stresses);
 			this.PrincipalStresses = compprincipalstresses(Stressestrial);

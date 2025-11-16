@@ -25,7 +25,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		public double Zeta { get; set; }
 		public double Kmax;
 		public double Kmin;
-		public IMatrixView ConstitutiveMatrix { get { return ElConstMatr; } set { } }
+		public IReadOnlyMatrix ConstitutiveMatrix { get { return ElConstMatr; } set { } }
 		private Matrix ConstMatr = Matrix.CreateFromArray(new double[6, 6]);
 		private Matrix ElConstMatr = Matrix.CreateFromArray(new double[6, 6]);
 		public double[] Coordinates { get; set; }
@@ -39,7 +39,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 		public double[] Stressestrial { get; set; }
 		public double[] initialStresses = new double[6];
 		public readonly double shearModulus;
-		public IMatrixView elasticConstitutiveMatrix { get { return ElConstMatr; } set { } } //the readonly was erased due to the change of the elasticconstitutivematric regarding time
+		public IReadOnlyMatrix elasticConstitutiveMatrix { get { return ElConstMatr; } set { } } //the readonly was erased due to the change of the elasticconstitutivematric regarding time
 		private double[] incrementalStrains = new double[6];
 		private double plasticStrain;
 		private double plasticStrainNew;
@@ -210,7 +210,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 
 		#endregion
 		#region DecideLoad
-		public void DecideLoad(double[] de, double[] Stresses, IMatrixView ConstitutiveMatrix)
+		public void DecideLoad(double[] de, double[] Stresses, IReadOnlyMatrix ConstitutiveMatrix)
 		{
 			if (hasfailed == false)
 			{

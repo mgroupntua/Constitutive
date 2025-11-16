@@ -22,10 +22,10 @@ namespace MGroup.Constitutive.Structural.Shells
 
 		public double[] MembraneForces { get; }
 		public double[] Moments { get; }
-		public IMatrixView MembraneConstitutiveMatrix { get; private set; }
-		public IMatrixView BendingConstitutiveMatrix { get; private set; }
-		public IMatrixView CouplingConstitutiveMatrix { get; private set; }
-		public IMatrixView ConstitutiveMatrix { get => throw new NotImplementedException(); }
+		public IReadOnlyMatrix MembraneConstitutiveMatrix { get; private set; }
+		public IReadOnlyMatrix BendingConstitutiveMatrix { get; private set; }
+		public IReadOnlyMatrix CouplingConstitutiveMatrix { get; private set; }
+		public IReadOnlyMatrix ConstitutiveMatrix { get => throw new NotImplementedException(); }
 
 
 		public double[] NormalVectorV3 { get; set; }

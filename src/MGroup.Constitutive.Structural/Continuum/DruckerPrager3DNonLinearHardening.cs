@@ -60,7 +60,8 @@ namespace MGroup.Constitutive.Structural.Continuum
 		bool validitytosmoothportion = true;
 		bool validitytoedges = true;
 		public Matrix Rotation = Matrix.CreateFromArray(new double[6, 6]);
-		public IMatrixView PrincipalStressConstitutiveMatrix { get; set; }
+		public IReadOnlyMatrix PrincipalStressConstitutiveMatrix { get; set; }
+
 		public DruckerPrager3DNonLinearHardening(double youngModulus, double poissonRatio, double cohesion, double friction, double dilation, string type)
 		{
 			this.tempstresses = new double[6];
@@ -177,7 +178,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			this.PrincipalVectors = Matrix.CreateFromArray(new double[3, 3]);
 		}
 
-		public IMatrixView ConstitutiveMatrix
+		public IReadOnlyMatrix ConstitutiveMatrix
 		{
 			get
 			{
@@ -402,7 +403,7 @@ namespace MGroup.Constitutive.Structural.Continuum
 			final.MatrixSymmetry = LinearAlgebra.Implementations.MatrixSymmetry.Symmetric;
 			return final;
 		}
-		public void CalculateNextStressStrainPoint(double[] de, double[] Stresses, IMatrixView ConstitutiveMatrix)
+		public void CalculateNextStressStrainPoint(double[] de, double[] Stresses, IReadOnlyMatrix ConstitutiveMatrix)
 		{
 			Stressestrial = compds(de, Stresses);
 			this.ptrial = (Stressestrial[0] + Stressestrial[1] + Stressestrial[2]) / 3;
