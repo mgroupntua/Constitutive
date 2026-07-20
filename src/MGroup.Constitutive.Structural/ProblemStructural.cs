@@ -318,7 +318,7 @@ namespace MGroup.Constitutive.Structural
 				{
 					double[] elementDisplacements = algebraicModel.ExtractElementVector(solution, element);
 					element.MapNodalBoundaryConditionsToElementVector(dirichletBoundaryConditions, elementDisplacements);
-					element.CalculateResponse(elementDisplacements);
+					element.CalculateResponse(elementDisplacements); //TODO: The returned values are not used!
 				});
 
 				algebraicModel.AddToGlobalVector(internalRhs, rhsProvider);
